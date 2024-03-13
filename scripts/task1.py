@@ -13,9 +13,56 @@ def task1(start: bool):
 
     DEBUG = True
 
-    setup(start, debug=DEBUG)
+    # setup(start, debug=DEBUG)
 
-    start_memcached(debug=DEBUG)
+    # start_memcached(debug=DEBUG)
+
+    type = "no_interference"
+    print(f"Starting pod of type {type}")
+    print("Pod ready")
+
+    run_tests(type, 5, debug=DEBUG)
+
+    for file in os.listdir("./interference"):
+        if file.endswith(".yaml"):
+            type = file.split(".")[0]
+    
+    
+
+
+def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
+    print("########### Running tests ###########")
+    node_info = get_node_info()
+    pod_info = get_pods_info()
+
+    for line in node_info:
+        if line[0].startswith("client-agent"):
+            client_agent_ip = line[5]
+        elif line[0].startswith("client-measure"):
+            client_measure_name = line[0]
+    
+    for line in pod_info:
+        if line[0].startswith("some-memcached"):
+            memcached_ip = line[5]
+
+    for i in range(num_iterations):
+        filename = f"./results/agent_{type}_{i}"
+        with open(filename+'.txt', "w") as f:
+            res = subprocess.run(
+                [
+                    "gcloud",
+                    "compute",
+                    "ssh",
+                    "--zone",
+                    "europe-west3-a",
+                    "--ssh-key-file",
+                    os.path.expanduser("~/.ssh/cloud-computing"),
+                    "ubuntu@" + client_measure_name,
+                    "--command",
+                    f"./memcache-perf/mcperf -s {memcached_ip} -a {client_agent_ip} --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 5 -w 2 --scan 5000:55000:5000",
+                ],
+                stdout=f,
+            )
 
 
 def setup(start: bool, debug: bool = False) -> None:
@@ -78,10 +125,11 @@ def install_memcached(debug: bool = False) -> None:
             run_command(install_command, should_print=debug)
     print("########### Finished Installing Memcached ###########")
 
+
 def start_memcached(debug: bool = False) -> None:
     print("########### Starting Memcached ###########")
-    node_info = get_node_info(debug=debug)
-    pod_info = get_pods_info(debug=debug)
+    node_info = get_node_info()
+    pod_info = get_pods_info()
 
     for line in node_info:
         if line[0].startswith("client-agent"):
