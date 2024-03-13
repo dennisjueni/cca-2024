@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "cca-project"
+version = "0.1.0"
+description = ""
+authors = []
+readme = "README.md"
+packages = [{ include = "scripts" }] # { include = "cca_project" },
+
+[tool.poetry.dependencies]
+python = "^3.9"
+click = "^8.1.7"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+run_task1 = 'scripts.task1:task1'
+delete_cluster = 'scripts.delete:delete_cluster_cli'
+
+[tool.black]
+line-length = 120
+target-version = ['py39', 'py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+  | \.git
+  | \.venv
+  | dist
+)/
+'''

@@ -13,13 +13,19 @@
     ```
 
 3. You need to install the necessary dependencies:
-    ```
+    ```bash
     pip install -r requirements.txt
+    # or
+    pip install poetry
+    poetry install
+    poetry shell # activate the virtual environment
     ```
 
 ## Running task 1 script
 
 To run the script for task1 run the following. f the cluster is already started, remove the --start flag:
-```
-$ python3 task1.py --start
+```bash
+$ python3 scripts/task1.py --start
+# alternatively if poetry project
+run_task1 --start
 ```
