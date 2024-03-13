@@ -6,10 +6,15 @@ import sys
 KOPS_STATE_STORE = "gs://cca-eth-2024-group-076-djueni/"
 PROJECT = "gcloud config get-value project"
 
+assert (
+    "cca-eth" in subprocess.run("gcloud config get-value project".split(), capture_output=True).stdout.decode()
+), "You are not in the correct project. Run 'gcloud config set project cca-eth-2024-group-076-djueni'"
+
+
 def run_command(command: list[str], env: dict[str, str] = dict(os.environ), should_print=True) -> None:
     res = subprocess.run(command, env=env, capture_output=True)
     if res.returncode != 0:
-        print("\033[91m!!! ERROR OCCURED !!!\033[0m") # Print in red
+        print("\033[91m!!! ERROR OCCURED !!!\033[0m")  # Print in red
         print(res.stderr.decode("utf-8"))
     elif should_print:
         print(res.stdout.decode("utf-8"))
@@ -31,7 +36,17 @@ def start_cluster(yaml_file: str, debug=False) -> None:
     create_command = ["kops", "create", "-f", yaml_file]
     run_command(create_command, environment_dict, should_print=debug)
 
-    create_secret_command = ["kops", "create", "secret", "--name", "part1.k8s.local", "sshpublickey", "admin", "-i", os.path.expanduser("~/.ssh/cloud-computing.pub")]
+    create_secret_command = [
+        "kops",
+        "create",
+        "secret",
+        "--name",
+        "part1.k8s.local",
+        "sshpublickey",
+        "admin",
+        "-i",
+        os.path.expanduser("~/.ssh/cloud-computing.pub"),
+    ]
     run_command(create_secret_command, environment_dict, should_print=debug)
 
     update_command = ["kops", "update", "cluster", "--name", "part1.k8s.local", "--yes", "--admin"]
@@ -72,12 +87,13 @@ def get_info(resource_type: str, debug: bool = False) -> list[list[str]]:
 
     # Split each line into a list of strings and remove empty lines and empty strings
     info = [line.split(" ") for line in lines if line != ""]
-    info = [[s for s in line if s != ""] for line in info] 
+    info = [[s for s in line if s != ""] for line in info]
     return info
 
 
 def get_node_info(debug: bool = False) -> list[list[str]]:
     return get_info("nodes", debug=debug)
+
 
 def get_pods_info(debug: bool = False) -> list[list[str]]:
     return get_info("pods", debug=debug)
@@ -100,7 +116,17 @@ def copy_file_to_node(node: str, source_path: str, destination_path: str, debug:
     if debug:
         print(f"Copying file {source_path} to node {node}")
 
-    copy_command = ["gcloud", "compute", "scp", "--ssh-key-file", os.path.expanduser("~/.ssh/cloud-computing"), "--zone", "europe-west3-a", source_path, f"ubuntu@{node}:{destination_path}"]
+    copy_command = [
+        "gcloud",
+        "compute",
+        "scp",
+        "--ssh-key-file",
+        os.path.expanduser("~/.ssh/cloud-computing"),
+        "--zone",
+        "europe-west3-a",
+        source_path,
+        f"ubuntu@{node}:{destination_path}",
+    ]
     run_command(copy_command, dict(os.environ), should_print=debug)
 
 
