@@ -92,7 +92,7 @@ def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
                 stdout=f,
             )
             check_output(res)
-        print(f"Test {i} of type {type} finished")
+        print(f"Test {i+1} of type {type} finished")
 
 
 def setup(start: bool, debug: bool = False) -> None:
