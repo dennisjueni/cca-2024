@@ -72,3 +72,12 @@ def pods_ready(debug: bool = False) -> bool:
         if pod[1] != "1/1" or pod[2] != "Running":
             return False
     return True
+
+
+def copy_file_to_node(node: str, source_path: str, destination_path: str, debug: bool = False) -> None:
+
+    if debug:
+        print(f"Copying file {source_path} to node {node}")
+
+    copy_command = ["gcloud", "compute", "scp", "--ssh-key-file", os.path.expanduser("~/.ssh/cloud-computing"), "--zone", "europe-west3-a", source_path, f"ubuntu@{node}:{destination_path}"]
+    run_command(copy_command, dict(os.environ), should_print=debug)
