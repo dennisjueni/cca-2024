@@ -12,24 +12,31 @@ def task1(start: bool):
     else:
         print("Skipped starting the cluster")
     
-    # run_memcached()
+    start_memcached(debug=True)
+
+    # TODO: Install memcached on the respective machines
+    #install_memcached(debug=True)
 
 
 
-# WIP!
-def run_memcached():
+def start_memcached(debug: bool = False) -> None:
+    print("########### Starting Memcached ###########")
+
     create_memcached_command = ["kubectl", "create", "-f", "memcache-t1-cpuset.yaml"]
-    run_command(create_memcached_command, should_print=True)
+    run_command(create_memcached_command, should_print=debug)
 
     expose_memcached_command = ["kubectl", "expose", "pod", "some-memcached", "--name", "some-memcached-11211", "--type", "LoadBalancer", "--port", "11211", "--protocol", "TCP"]
-    run_command(expose_memcached_command, should_print=True)
+    run_command(expose_memcached_command, should_print=debug)
 
-    while not pods_ready():
-        # TODO: Take this print out if it's working as expected (added for now to check if everything is working as intended)
-        print("Waiting for pods to be ready")
+    while not pods_ready(debug=debug):
         time.sleep(10)
 
-    print("Pods are ready")
+    print("########### Memcached started ###########")
+
+
+
+def install_memcached(debug: bool = False) -> None:
+    pass
 
 
 

@@ -39,33 +39,36 @@ def start_cluster(yaml_file: str, debug=False) -> None:
     print("########### Cluster started ###########")
 
 
-def get_info(resource_type: str) -> list[list[str]]:
+def get_info(resource_type: str, debug: bool = False) -> list[list[str]]:
     get_command = ["kubectl", "get", resource_type, "-o", "wide"]
     res = subprocess.run(get_command, env=dict(os.environ), capture_output=True)
+
+    if debug:
+        print(res.stdout.decode("utf-8"))
 
     # Split the output into lines and remove the first line (header)
     lines = res.stdout.decode("utf-8").split("\n")[1:]
 
-    # Split each line into a list of strings and remove empty lines
-    # TODO: Copilot suggested removing empty lines, don't know if it's necessary or even correct in this case
+    # Split each line into a list of strings and remove empty lines and empty strings
     info = [line.split(" ") for line in lines if line != ""]
+    info = [[s for s in line if s != ""] for line in info] 
     return info
 
 
-def get_node_info() -> None:
-    return get_info("nodes")
+def get_node_info(debug: bool = False) -> list[list[str]]:
+    return get_info("nodes", debug=debug)
 
-def get_pods_info() -> None:
-    return get_info("pods")
+def get_pods_info(debug: bool = False) -> list[list[str]]:
+    return get_info("pods", debug=debug)
 
 
-def pods_ready() -> bool:
-    info = get_info("pods")
+def pods_ready(debug: bool = False) -> bool:
+    info = get_pods_info(debug=debug)
 
     if len(info) == 0:
         return False
 
     for pod in info:
-        if pod[1] != "Running":
+        if pod[1] != "1/1" or pod[2] != "Running":
             return False
     return True
