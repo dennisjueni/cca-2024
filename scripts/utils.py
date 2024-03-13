@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 
 
 KOPS_STATE_STORE = "gs://cca-eth-2024-group-076-djueni/"
@@ -81,3 +82,9 @@ def copy_file_to_node(node: str, source_path: str, destination_path: str, debug:
 
     copy_command = ["gcloud", "compute", "scp", "--ssh-key-file", os.path.expanduser("~/.ssh/cloud-computing"), "--zone", "europe-west3-a", source_path, f"ubuntu@{node}:{destination_path}"]
     run_command(copy_command, dict(os.environ), should_print=debug)
+
+
+def check_output(res: subprocess.CompletedProcess) -> None:
+    if res.returncode != 0:
+        print(res.stderr.decode("utf-8"))
+        sys.exit(1)

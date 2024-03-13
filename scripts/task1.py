@@ -4,7 +4,7 @@ import click
 import time
 import os
 
-from utils import start_cluster, run_command, pods_ready, get_node_info, get_pods_info, copy_file_to_node
+from utils import start_cluster, run_command, pods_ready, get_node_info, get_pods_info, copy_file_to_node, check_output
 
 
 @click.command()
@@ -12,22 +12,37 @@ from utils import start_cluster, run_command, pods_ready, get_node_info, get_pod
 def task1(start: bool):
 
     DEBUG = True
+    PATH = "./interference"
+    NUM_ITERATIONS = 3
 
-    # setup(start, debug=DEBUG)
+    setup(start, debug=DEBUG)
 
-    # start_memcached(debug=DEBUG)
+    start_memcached(debug=DEBUG)
 
     type = "no_interference"
     print(f"Starting pod of type {type}")
     print("Pod ready")
 
-    run_tests(type, 5, debug=DEBUG)
+    run_tests(type, NUM_ITERATIONS, debug=DEBUG)
 
-    for file in os.listdir("./interference"):
+    for file in os.listdir(PATH):
         if file.endswith(".yaml"):
             type = file.split(".")[0]
-    
-    
+
+            print(f"Starting pod of type {type}")
+
+            res = subprocess.run(["kubectl", "create", "-f", os.path.join(PATH, file)], capture_output=True)
+            check_output(res)
+
+            while not pods_ready(debug=DEBUG):
+                time.sleep(10)
+            
+            print("Pod ready")
+            run_tests(type, NUM_ITERATIONS, debug=DEBUG)
+
+            #delete the pods and wait 10s to make sure the pod is deleted
+            subprocess.run(["kubectl", "delete", "pods", type])
+            sleep(10)
 
 
 def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
@@ -45,9 +60,13 @@ def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
         if line[0].startswith("some-memcached"):
             memcached_ip = line[5]
 
+    directory_path = os.path.join("./results", type)
+    os.makedirs(directory_path, exist_ok=True)
+
     for i in range(num_iterations):
-        filename = f"./results/agent_{type}_{i}"
-        with open(filename+'.txt', "w") as f:
+        filename = os.path.join(directory_path, f"run_{i+1}.txt")
+
+        with open(filename, "w") as f:
             res = subprocess.run(
                 [
                     "gcloud",
@@ -63,6 +82,8 @@ def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
                 ],
                 stdout=f,
             )
+            check_output(res)
+        print(f"Test {i} of type {type} finished")
 
 
 def setup(start: bool, debug: bool = False) -> None:
