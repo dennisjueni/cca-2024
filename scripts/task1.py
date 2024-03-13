@@ -1,3 +1,4 @@
+import sys
 from time import sleep
 import subprocess
 import click
@@ -50,15 +51,23 @@ def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
     node_info = get_node_info()
     pod_info = get_pods_info()
 
+    client_agent_ip = ""
+    client_measure_name = ""
+    memcached_ip = ""
+
     for line in node_info:
         if line[0].startswith("client-agent"):
             client_agent_ip = line[5]
         elif line[0].startswith("client-measure"):
             client_measure_name = line[0]
-    
+
     for line in pod_info:
         if line[0].startswith("some-memcached"):
             memcached_ip = line[5]
+
+    if client_agent_ip == "" or client_measure_name == "" or memcached_ip == "":
+        print("Could not find client-agent or client-measure node")
+        sys.exit(1)
 
     directory_path = os.path.join("./results", type)
     os.makedirs(directory_path, exist_ok=True)
@@ -152,16 +161,24 @@ def start_memcached(debug: bool = False) -> None:
     node_info = get_node_info()
     pod_info = get_pods_info()
 
+    client_agent_name = ""
+    client_measure_name = ""
+    memcached_ip = ""
+
     for line in node_info:
         if line[0].startswith("client-agent"):
             client_agent_name = line[0]
         elif line[0].startswith("client-measure"):
             client_measure_name = line[0]
-    
+
     for line in pod_info:
         if line[0].startswith("some-memcached"):
             memcached_ip = line[5]
-    
+
+    if client_agent_name == "" or client_measure_name == "" or memcached_ip == "":
+        print("Could not find client-agent or client-measure node")
+        sys.exit(1)
+
     mcperf_agent_command = ["gcloud", "compute", "ssh", "--zone", "europe-west3-a", "--ssh-key-file", os.path.expanduser("~/.ssh/cloud-computing"), "ubuntu@" + client_agent_name, "--command", "./memcache-perf/mcperf -T 16 -A"]
     subprocess.Popen(mcperf_agent_command)
 
