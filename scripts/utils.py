@@ -20,10 +20,13 @@ def start_cluster(yaml_file: str, debug=False) -> None:
 
     # We create a copy of the current environment variables to make sure we don't modify the original
     environment_dict = dict(os.environ)
-    
-    # Update teh environment variables
+
+    # Update the environment variables
     environment_dict["KOPS_STATE_STORE"] = KOPS_STATE_STORE
     environment_dict["PROJECT"] = PROJECT
+
+    create_bucket_command = ["gsutil", "mb", KOPS_STATE_STORE]
+    run_command(create_bucket_command, environment_dict, should_print=debug)
 
     create_command = ["kops", "create", "-f", yaml_file]
     run_command(create_command, environment_dict, should_print=debug)
@@ -38,6 +41,23 @@ def start_cluster(yaml_file: str, debug=False) -> None:
     run_command(validate_command, environment_dict, should_print=debug)
 
     print("########### Cluster started ###########")
+
+
+def delete_cluster(debug=False) -> None:
+    # We create a copy of the current environment variables to make sure we don't modify the original
+    environment_dict = dict(os.environ)
+
+    # Update the environment variables
+    environment_dict["KOPS_STATE_STORE"] = KOPS_STATE_STORE
+    environment_dict["PROJECT"] = PROJECT
+
+    delete_comand = ["kops", "delete", "cluster", "part1.k8s.local", "--yes"]
+    run_command(delete_comand, environment_dict, should_print=debug)
+
+    delete_bucket_command = ["gsutil", "rm", "-r", KOPS_STATE_STORE]
+    run_command(delete_bucket_command, environment_dict, should_print=debug)
+
+    print("########### Cluster deleted ###########")
 
 
 def get_info(resource_type: str, debug: bool = False) -> list[list[str]]:
