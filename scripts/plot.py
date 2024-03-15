@@ -48,6 +48,8 @@ def plt_setup(xlim, ylim, title=None, xlabel=None, ylabel=None):
     sns.despine(left=True, bottom=True)
     plt.xlim(xlim)
     plt.ylim(ylim)
+    # set ticks on x axis to every 5000
+    plt.xticks(np.arange(0, xlim[1], 5000))
     plt.xlabel(xlabel or "QPS [queries/s]", labelpad=10, fontsize=12)  # Adjust labelpad and fontsize
     plt.ylabel(ylabel or "Latency [ms] 95th Percentile", labelpad=10, fontsize=12)
     plt.title(title or "Latency 95th Percentile wrt. QPS", pad=10, fontsize=12)
@@ -63,7 +65,7 @@ if __name__ == "__main__":
         os.chdir("../")
     # check if --task1 flag is present
     if "--task1" in sys.argv:
-        plt_setup(xlim=(0, 55e3), ylim=(0, 8e3))
+        plt_setup(xlim=(0, 55e3 + 1), ylim=(0, 8e3))
         colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
         benchmarks = [b for b in os.listdir("results") if os.path.isdir(f"results/{b}")]
         for benchmark in benchmarks:
@@ -71,7 +73,7 @@ if __name__ == "__main__":
             p95_mean, p95_std = get_mean_std(dfs, "p95")
             qps_mean, qps_std = get_mean_std(dfs, "QPS")
             plot_errorbar(qps_mean, p95_mean, qps_std, p95_std, label=f"{benchmark}", color=next(colors))
-        plt.legend(loc="upper left")
+        plt.legend(loc="upper right")
         plt.subplots_adjust(bottom=0.15)
         plt.savefig("results/latency_95th_percentile_qps_part1.png")
         plt.show()
