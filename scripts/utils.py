@@ -1,8 +1,6 @@
 import os
 import subprocess
 import sys
-import pandas as pd
-import re
 
 KOPS_STATE_STORE = "gs://cca-eth-2024-group-076-djueni/"
 PROJECT = "gcloud config get-value project"
@@ -137,16 +135,3 @@ def check_output(res: subprocess.CompletedProcess) -> None:
     if res.returncode != 0:
         print(res.stderr.decode("utf-8"))
         sys.exit(1)
-
-
-def load_run_data(file_path: str) -> pd.DataFrame:
-    with open(file_path, "r") as f:
-        lines = [line for line in f.readlines() if re.match(r"^(\#type|read)", line)]
-        keys = lines[0].split()[1:]
-        data = {k: [] for k in keys}
-        for line in lines[1:]:
-            line_values = line.split()[1:]
-            for i, key in enumerate(keys):
-                data[key].append(line_values[i] if i == 0 else float(line_values[i]))
-    df = pd.DataFrame(data)
-    return df
