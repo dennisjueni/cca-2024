@@ -81,6 +81,7 @@ def plot_errorbar(x, y, xerr, yerr, xlim, ylim, title=None, xlabel=None, ylabel=
             alpha=0.6,
         )
     plt.plot(x, y, "o:", color="black", alpha=0.8, markersize=5)
+    plt.subplots_adjust(bottom=0.15)
     if save_path:
         plt.savefig(save_path)
     plt.show()
