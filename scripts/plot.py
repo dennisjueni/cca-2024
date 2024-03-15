@@ -54,17 +54,7 @@ def plt_setup(xlim, ylim, title=None, xlabel=None, ylabel=None):
 
 
 def plot_errorbar(x, y, xerr, yerr, label, color="black"):
-    plt.errorbar(
-        x=x,
-        y=y,
-        xerr=xerr,
-        yerr=yerr,
-        fmt="o",
-        color=color,
-        ecolor=color,
-        elinewidth=2,
-        alpha=0.25,
-    )
+    plt.errorbar(x=x, y=y, xerr=xerr, yerr=yerr, fmt="o", color=color, ecolor=color, elinewidth=2, alpha=0.25)
     plt.plot(x, y, "o:", label=label, color=color, alpha=1, markersize=5)
 
 
