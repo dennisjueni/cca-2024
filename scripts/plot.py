@@ -1,3 +1,4 @@
+from itertools import cycle
 import sys
 import pandas as pd
 import re, os
@@ -37,7 +38,7 @@ def get_mean_std(df_itr: Iterable[DataFrame], key: str) -> Tuple[np.ndarray, np.
     return mean, std
 
 
-def plot_errorbar(x, y, xerr, yerr, xlim, ylim, title=None, xlabel=None, ylabel=None, save_path=None, colored=False):
+def plt_setup(xlim, ylim, title=None, xlabel=None, ylabel=None):
     sns.set_palette("deep")
     sns.set_style("whitegrid")
     plt.figure(figsize=(8, 4), dpi=150)
@@ -47,69 +48,43 @@ def plot_errorbar(x, y, xerr, yerr, xlim, ylim, title=None, xlabel=None, ylabel=
     sns.despine(left=True, bottom=True)
     plt.xlim(xlim)
     plt.ylim(ylim)
-    # set figure size
     plt.xlabel(xlabel or "QPS [queries/s]", labelpad=10, fontsize=12)  # Adjust labelpad and fontsize
     plt.ylabel(ylabel or "Latency [ms] 95th Percentile", labelpad=10, fontsize=12)
     plt.title(title or "Latency 95th Percentile wrt. QPS", pad=10, fontsize=12)
-    # generate color based on index
-    if colored:
-        colors = [[1 - 1 * i / len(x) for _ in range(3)] for i in range(len(x))]
-        for i in range(len(x)):
-            plt.errorbar(
-                x=x[i],
-                y=y[i],
-                xerr=xerr[i],
-                yerr=yerr[i],
-                fmt="o",
-                color=colors[i],
-                ecolor="lightgray",
-                elinewidth=3,
-                capsize=0,
-                alpha=0.6,
-            )
-    else:
-        plt.errorbar(
-            x=x,
-            y=y,
-            xerr=xerr,
-            yerr=yerr,
-            fmt="o",
-            color="black",
-            ecolor="lightgray",
-            elinewidth=3,
-            capsize=0,
-            alpha=0.6,
-        )
-    plt.plot(x, y, "o:", color="black", alpha=0.8, markersize=5)
-    plt.subplots_adjust(bottom=0.15)
-    if save_path:
-        plt.savefig(save_path)
-    plt.show()
-    plt.close()
+
+
+def plot_errorbar(x, y, xerr, yerr, label, color="black"):
+    plt.errorbar(
+        x=x,
+        y=y,
+        xerr=xerr,
+        yerr=yerr,
+        fmt="o",
+        color=color,
+        ecolor=color,
+        elinewidth=2,
+        alpha=0.25,
+    )
+    plt.plot(x, y, "o:", label=label, color=color, alpha=1, markersize=5)
 
 
 if __name__ == "__main__":
     while not os.path.exists("scripts"):
         os.chdir("../")
-
     # check if --task1 flag is present
     if "--task1" in sys.argv:
-        benchmarks = os.listdir("results")
+        plt_setup(xlim=(0, 55e3), ylim=(0, 8e3))
+        colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
+        benchmarks = [b for b in os.listdir("results") if os.path.isdir(f"results/{b}")]
         for benchmark in benchmarks:
             dfs = load_run_data_folder(f"results/{benchmark}")
             p95_mean, p95_std = get_mean_std(dfs, "p95")
             qps_mean, qps_std = get_mean_std(dfs, "QPS")
-            plot_errorbar(
-                qps_mean,
-                p95_mean,
-                qps_std,
-                p95_std,
-                title=f"{benchmark} : Latency 95th / QPS",
-                xlim=(0, 55e3),
-                ylim=(0, 8e3),
-                colored=True,
-                save_path=f"results/{benchmark}/plot_p95_qps.png",
-            )
+            plot_errorbar(qps_mean, p95_mean, qps_std, p95_std, label=f"{benchmark}", color=next(colors))
+        plt.legend(loc="upper left")
+        plt.subplots_adjust(bottom=0.15)
+        plt.savefig("results/latency_95th_percentile_qps_part1.png")
+        plt.show()
     else:
         print("Please provide a valid flag")
         sys.exit(1)
