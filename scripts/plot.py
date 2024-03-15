@@ -48,8 +48,8 @@ def plot_errorbar(x, y, xerr, yerr, xlim, ylim, title=None, xlabel=None, ylabel=
     plt.xlim(xlim)
     plt.ylim(ylim)
     # set figure size
-    plt.xlabel(xlabel or "QPS", labelpad=10, fontsize=12)  # Adjust labelpad and fontsize
-    plt.ylabel(ylabel or "Latency 95th Percentile", labelpad=10, fontsize=12)
+    plt.xlabel(xlabel or "QPS [queries/s]", labelpad=10, fontsize=12)  # Adjust labelpad and fontsize
+    plt.ylabel(ylabel or "Latency [ms] 95th Percentile", labelpad=10, fontsize=12)
     plt.title(title or "Latency 95th Percentile wrt. QPS", pad=10, fontsize=12)
     # generate color based on index
     if colored:
