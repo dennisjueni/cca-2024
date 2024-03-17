@@ -63,7 +63,15 @@ if __name__ == "__main__":
     if "--task1" in sys.argv:
         plt_setup(xlim=(0, 55e3 + 1), ylim=(0, 8e3))
         colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
-        benchmarks = [b for b in os.listdir("results") if os.path.isdir(f"results/{b}")]
+        benchmarks = [
+            "no_interference",
+            "ibench-l1d",
+            "ibench-l1i",
+            "ibench-l2",
+            "ibench-llc",
+            "ibench-cpu",
+            "ibench-membw",
+        ]
 
         for benchmark in benchmarks:
             dfs = load_run_data_folder(f"results/{benchmark}")
