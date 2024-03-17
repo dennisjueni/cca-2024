@@ -2,13 +2,14 @@ import os
 import subprocess
 import sys
 
-
 KOPS_STATE_STORE = "gs://cca-eth-2024-group-076-djueni/"
 PROJECT = "gcloud config get-value project"
 
-assert (
-    "cca-eth" in subprocess.run("gcloud config get-value project".split(), capture_output=True).stdout.decode()
-), "You are not in the correct project. Run 'gcloud config set project cca-eth-2024-group-076-djueni'"
+# if os is not windows
+if os.name != "nt":
+    assert (
+        "cca-eth" in subprocess.run("gcloud config get-value project".split(), capture_output=True).stdout.decode()
+    ), "You are not in the correct project. Run 'gcloud config set project cca-eth-2024-group-076-djueni'"
 
 
 def run_command(command: list[str], env: dict[str, str] = dict(os.environ), should_print=True) -> None:
