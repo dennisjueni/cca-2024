@@ -1,5 +1,4 @@
 import sys
-from time import sleep
 import subprocess
 import click
 import time
@@ -53,7 +52,7 @@ def task1(start: bool):
 
             # delete the pods and wait 10s to make sure the pod is deleted
             subprocess.run(["kubectl", "delete", "pods", type])
-            sleep(10)
+            time.sleep(10)
 
 
 def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
@@ -109,7 +108,7 @@ def setup(start: bool, debug: bool = False) -> None:
     """Sets up the environment for task 1. This includes starting the cluster, launching memcached and installing memcached on the nodes client-agent and client-measure."""
 
     if start:
-        start_cluster("part1.yaml", debug=debug)
+        start_cluster("part1.yaml", cluster_name="part1.k8s.local", debug=debug)
     else:
         print("Skipped starting the cluster")
 
@@ -239,7 +238,7 @@ def start_memcached(debug: bool = False) -> None:
 
     print("Agent started")
 
-    sleep(5)
+    time.sleep(5)
 
     mcperf_measure_command = [
         "gcloud",
