@@ -13,6 +13,8 @@ MARKERS = ["o", "v", "^", "<", ">", "s", "p", "*", "h", "H", "D", "d", "P", "X"]
 
 def load_run_data(file_path: str) -> pd.DataFrame:
     df = pd.read_csv(file_path, delimiter=" ", skipinitialspace=True, skipfooter=2, engine="python")
+    for col in df.filter(regex="(^p|mean)").columns:
+        df[col] = df[col] / 1000
     return df
 
 
@@ -60,29 +62,25 @@ if __name__ == "__main__":
     while not os.path.exists("scripts"):
         os.chdir("../")
 
-    # check if --task1 flag is present
-    if "--task1" in sys.argv:
-        plt_setup(xlim=(0, 55e3 + 1), ylim=(0, 8))
-        colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
-        benchmarks = [b for b in os.listdir("results") if os.path.isdir(f"results/{b}")]
-        for i, benchmark in enumerate(benchmarks):
-            dfs = load_run_data_folder(f"results/{benchmark}")
-            p95_mean, p95_std = get_mean_std(dfs, "p95")
-            qps_mean, qps_std = get_mean_std(dfs, "QPS")
-            plot_errorbar(
-                qps_mean,
-                p95_mean,
-                qps_std,
-                p95_std,
-                marker=MARKERS[i % len(MARKERS)],
-                label=f"{benchmark}",
-                color=next(colors),
-            )
-        plt.legend(loc="upper right")
-        # plt.subplots_adjust(bottom=0.15)
-        plt.subplots_adjust(left=0.08, right=0.92, bottom=0.08, top=0.95)
-        plt.savefig("results/latency_95th_percentile_qps_part1.png")
-        plt.show()
-    else:
-        print("Please provide a valid flag")
-        sys.exit(1)
+    plt_setup(xlim=(0, 55e3 + 1), ylim=(0, 8))
+    colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
+    listdir = [l for l in os.listdir("results/task1") if l.startswith("ibench") or l.startswith("no_interference")]
+    benchmarks = [b for b in listdir if os.path.isdir(f"results/task1/{b}")]
+    for i, benchmark in enumerate(benchmarks):
+        dfs = load_run_data_folder(f"results/task1/{benchmark}")
+        p95_mean, p95_std = get_mean_std(dfs, "p95")
+        qps_mean, qps_std = get_mean_std(dfs, "QPS")
+        plot_errorbar(
+            qps_mean,
+            p95_mean,
+            qps_std,
+            p95_std,
+            marker=MARKERS[i % len(MARKERS)],
+            label=f"{benchmark}",
+            color=next(colors),
+        )
+    plt.legend(loc="upper right")
+    # plt.subplots_adjust(bottom=0.15)
+    plt.subplots_adjust(left=0.08, right=0.92, bottom=0.08, top=0.95)
+    plt.savefig("results/latency_95th_percentile_qps_part1.png")
+    plt.show()
