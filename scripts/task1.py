@@ -23,7 +23,7 @@ def task1(start: bool):
 
     DEBUG = True
     PATH = "./interference"
-    NUM_ITERATIONS = 3
+    NUM_ITERATIONS = 5
 
     setup(start, debug=DEBUG)
 

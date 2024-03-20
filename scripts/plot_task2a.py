@@ -47,9 +47,25 @@ def print_latex_table(data, order, jobs_order):
 
     # Data rows
     for job in jobs_order:
-        row_data = [job] + [data[job][h] for h in order]
-        print("        " + " & ".join(row_data) + " \\\\" + "  \\hline")
-    print("    \\end{tabular}")
+        print(job + " &", end=" ")
+        row_data = [data[job][h] for h in order]
+
+        # Print the first column without color
+        print(f"{row_data[0]:.2f}", end=" ")
+
+        for d in row_data[1:]:
+            print("&", end=" ")
+            if d <= 1.3:
+                print("\\cellcolor{Green}", end=" ")
+            elif d <= 2:
+                print("\\cellcolor{YellowOrange}", end=" ")
+            else:
+                print("\\cellcolor{Red}", end=" ")
+            print(f"{d:.2f}", end=" ")
+
+        print("\\\\ \\hline")
+
+    print("\\end{tabular}")
     print("\\end{center}")
 
 
@@ -63,7 +79,7 @@ def main():
     columns_order = ["none", "cpu", "l1d", "l1i", "l2", "llc", "memBW"]
     jobs_order = ["blackscholes", "canneal", "dedup", "ferret", "freqmine", "radix", "vips"]
 
-    data = {job: {"none": "1.00"} for job in jobs_order}
+    data = {job: {"none": 1.00} for job in jobs_order}
 
     interference_to_column = {
         "ibench-cpu": "cpu",
@@ -93,7 +109,7 @@ def main():
 
             # Calculate normalized time and update the data structure
             normalized_time = round(time / baseline_times[job_filename], 2)
-            data[job_name][column_name] = str(normalized_time)
+            data[job_name][column_name] = normalized_time
 
     print_latex_table(data, columns_order, jobs_order)
 
