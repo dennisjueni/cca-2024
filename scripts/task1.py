@@ -78,7 +78,7 @@ def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
         print("Could not find client-agent or client-measure node")
         sys.exit(1)
 
-    directory_path = os.path.join("./results", type)
+    directory_path = os.path.join("./results/task1", type)
     os.makedirs(directory_path, exist_ok=True)
 
     for i in range(num_iterations):

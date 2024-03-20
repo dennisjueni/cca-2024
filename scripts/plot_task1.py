@@ -74,14 +74,14 @@ if __name__ == "__main__":
         ]
 
         for benchmark in benchmarks:
-            dfs = load_run_data_folder(f"results/{benchmark}")
+            dfs = load_run_data_folder(f"results/task1/{benchmark}")
             p95_mean, p95_std = get_mean_std(dfs, "p95")
             qps_mean, qps_std = get_mean_std(dfs, "QPS")
             plot_errorbar(qps_mean, p95_mean, qps_std, p95_std, label=f"{benchmark}", color=next(colors))
 
         plt.legend(loc="upper right")
         plt.subplots_adjust(bottom=0.15)
-        plt.savefig("results/plots/latency_95th_percentile_qps_part1.png")
+        plt.savefig("results/task1/plots/latency_95th_percentile_qps_part1.png")
         plt.show()
     else:
         print("Please provide a valid flag")
