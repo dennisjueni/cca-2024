@@ -21,7 +21,7 @@ def run_command(command: list[str], env: dict[str, str] = dict(os.environ), shou
         print(res.stdout.decode("utf-8"))
 
 
-def start_cluster(yaml_file: str, debug=False) -> None:
+def start_cluster(yaml_file: str, cluster_name: str, debug=False) -> None:
     print("########### Starting cluster ###########")
 
     # We create a copy of the current environment variables to make sure we don't modify the original
@@ -42,7 +42,7 @@ def start_cluster(yaml_file: str, debug=False) -> None:
         "create",
         "secret",
         "--name",
-        "part1.k8s.local",
+        cluster_name,
         "sshpublickey",
         "admin",
         "-i",
@@ -50,7 +50,7 @@ def start_cluster(yaml_file: str, debug=False) -> None:
     ]
     run_command(create_secret_command, environment_dict, should_print=debug)
 
-    update_command = ["kops", "update", "cluster", "--name", "part1.k8s.local", "--yes", "--admin"]
+    update_command = ["kops", "update", "cluster", "--name", cluster_name, "--yes", "--admin"]
     run_command(update_command, environment_dict, should_print=debug)
 
     validate_command = ["kops", "validate", "cluster", "--wait", "10m"]
@@ -59,7 +59,7 @@ def start_cluster(yaml_file: str, debug=False) -> None:
     print("########### Cluster started ###########")
 
 
-def delete_cluster(debug=False) -> None:
+def delete_cluster(cluster_name: str, debug=False) -> None:
     # We create a copy of the current environment variables to make sure we don't modify the original
     environment_dict = dict(os.environ)
 
@@ -67,7 +67,7 @@ def delete_cluster(debug=False) -> None:
     environment_dict["KOPS_STATE_STORE"] = KOPS_STATE_STORE
     environment_dict["PROJECT"] = PROJECT
 
-    delete_comand = ["kops", "delete", "cluster", "part1.k8s.local", "--yes"]
+    delete_comand = ["kops", "delete", "cluster", cluster_name, "--yes"]
     run_command(delete_comand, environment_dict, should_print=debug)
 
     delete_bucket_command = ["gsutil", "rm", "-r", KOPS_STATE_STORE]
@@ -100,6 +100,10 @@ def get_pods_info(debug: bool = False) -> list[list[str]]:
     return get_info("pods", debug=debug)
 
 
+def get_jobs_info(debug: bool = False) -> list[list[str]]:
+    return get_info("jobs", debug=debug)
+
+
 def pods_ready(debug: bool = False) -> bool:
     info = get_pods_info(debug=debug)
 
@@ -108,6 +112,18 @@ def pods_ready(debug: bool = False) -> bool:
 
     for pod in info:
         if pod[1] != "1/1" or pod[2] != "Running":
+            return False
+    return True
+
+
+def jobs_ready(debug: bool = False) -> bool:
+    info = get_jobs_info(debug=debug)
+
+    if len(info) == 0:
+        return False
+
+    for line in info:
+        if line[1] != "1/1":
             return False
     return True
 
