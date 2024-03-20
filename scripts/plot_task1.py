@@ -12,18 +12,7 @@ MARKERS = ["o", "v", "^", "<", ">", "s", "p", "*", "h", "H", "D", "d", "P", "X"]
 
 
 def load_run_data(file_path: str) -> pd.DataFrame:
-    with open(file_path, "r") as f:
-        lines = [line for line in f.readlines() if re.match(r"^(\#type|read)", line)]
-        keys = lines[0].split()[1:]
-        data = {k: [] for k in keys}
-        for line in lines[1:]:
-            line_values = line.split()[1:]
-            for i, key in enumerate(keys):
-                if key not in ["QPS", "target"]:
-                    data[key].append((line_values[i] if i == 0 else float(line_values[i]) / 1e3))  # convert µs to ms
-                else:
-                    data[key].append(line_values[i] if i == 0 else float(line_values[i]))
-    df = pd.DataFrame(data)
+    df = pd.read_csv(file_path, delimiter=" ", skipinitialspace=True, skipfooter=2, engine="python")
     return df
 
 
@@ -32,7 +21,8 @@ def load_run_data_folder(folder_path: str) -> List[pd.DataFrame]:
 
 
 def get_mean_std(df_itr: Iterable[DataFrame], key: str) -> Tuple[np.ndarray, np.ndarray]:
-    """Get mean and std of a key from a list of dataframes.
+    """
+    Get mean and std of a key from a list of dataframes.
 
     Args:
     df_itr: Iterable[DataFrame] : List of dataframes to average / compute std over
@@ -66,8 +56,10 @@ def plot_errorbar(x, y, xerr, yerr, label, color="black", marker="o"):
 
 
 if __name__ == "__main__":
+
     while not os.path.exists("scripts"):
         os.chdir("../")
+
     # check if --task1 flag is present
     if "--task1" in sys.argv:
         plt_setup(xlim=(0, 55e3 + 1), ylim=(0, 8))

@@ -11,6 +11,7 @@ python = "^3.9"
 click = "^8.1.7"
 matplotlib = "^3.8.3"
 seaborn = "^0.13.2"
+ruamel-yaml = "^0.18.6"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
@@ -22,6 +23,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 run_task1 = 'scripts.task1:task1'
+run_task2a = 'scripts.task2a:task2a'
+run_task2b = 'scripts.task2b:task2b'
 delete_cluster = 'scripts.delete:delete_cluster_cli'
 
 [tool.black]
