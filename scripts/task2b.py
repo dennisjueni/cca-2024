@@ -18,7 +18,8 @@ def task2b(start: bool):
 
     setup(start, debug=DEBUG)
 
-    run_tests(parsec_path=PARSEC_PATH, threads=[1, 2, 4, 8, 16], debug=DEBUG)
+    # TODO: Run this again from 2 threads onwards
+    run_tests(parsec_path=PARSEC_PATH, threads=[1, 2, 4, 8], debug=DEBUG)
 
 
 def setup(start: bool, debug: bool = False) -> None:
