@@ -28,6 +28,8 @@ def task2a(start: bool):
 
     run_tests(INTERFERENCE_PATH, PARSEC_PATH, debug=DEBUG)
 
+    run_tests_no_interference(PARSEC_PATH, debug=DEBUG)
+
 
 def setup(start: bool, debug: bool = False) -> None:
     if start:
@@ -97,6 +99,44 @@ def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
             res = subprocess.run(["kubectl", "delete", "jobs", "--all"])
 
         res = subprocess.run(["kubectl", "delete", "pods", "--all"])
+
+
+def run_tests_no_interference(parsec_path: str, debug: bool) -> None:
+    for parsec_file in os.listdir(parsec_path):
+        res = subprocess.run(["kubectl", "create", "-f", os.path.join(parsec_path, parsec_file)], capture_output=True)
+
+        while not jobs_ready(debug=debug):
+            time.sleep(5)
+
+        jobname = ""
+        for line in get_jobs_info(debug=debug):
+            if line[0].startswith("parsec"):
+                jobname = line[0]
+                break
+
+        if jobname == "":
+            print("ERROR: Job name not found")
+            return
+
+        directory_path = "./results/task2a/no_interference"
+        os.makedirs(directory_path, exist_ok=True)
+
+        filename = os.path.join(directory_path, f"{parsec_file.rsplit('.', 1)[0]}.txt")
+
+        pod = ""
+        with open(filename, "w") as f:
+            for line in get_pods_info(debug=debug):
+                if line[0].startswith(jobname):
+                    pod = line[0]
+                    break
+
+            if pod == "":
+                print("ERROR: Pod name not found")
+                return
+
+            res = subprocess.run(["kubectl", "logs", pod], stdout=f)
+
+        res = subprocess.run(["kubectl", "delete", "jobs", "--all"])
 
 
 if __name__ == "__main__":
