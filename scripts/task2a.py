@@ -16,32 +16,32 @@ from scripts.utils import (
 
 @click.command()
 @click.option(
-    "--interference_path", "-ip", help="Path to the folder containing all interference yaml files", type=click.Path()
-)
-@click.option("--parsec_path", "-pp", help="Path to the folder contining all parsec yaml files", type=click.Path())
-@click.option(
     "--start", "-s", help="Flag indicating if the cluster should be started", is_flag=True, default=False, type=bool
 )
-def task2a(interference_path: str, parsec_path: str, start: bool):
+def task2a(start: bool):
 
     DEBUG = True
+    INTERFERENCE_PATH = "./interference-2a"
+    PARSEC_PATH = "./parsec-benchmarks/part2a"
 
     setup(start, debug=DEBUG)
+
+    run_tests(INTERFERENCE_PATH, PARSEC_PATH, debug=DEBUG)
 
 
 def setup(start: bool, debug: bool = False) -> None:
     if start:
         start_cluster("part2a.yaml", cluster_name="part2a.k8s.local", debug=debug)
-    else:
-        print("Skipped starting the cluster")
 
-    # Assign the correct label to parsec node
-    for line in get_node_info(debug=debug):
-        if line[0].startswith("parsec-server"):
-            res = subprocess.run(
-                ["kubectl", "label", "nodes", line[0], "cca-project-nodetype=parsec"], capture_output=True
-            )
-            check_output(res)
+        # Assign the correct label to parsec node
+        for line in get_node_info(debug=debug):
+            if line[0].startswith("parsec-server"):
+                res = subprocess.run(
+                    ["kubectl", "label", "nodes", line[0], "cca-project-nodetype=parsec"], capture_output=True
+                )
+                check_output(res)
+    else:
+        print("Skipped setting up the cluster")
 
 
 def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
@@ -76,7 +76,9 @@ def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
                 print("ERROR: Job name not found")
                 return
 
-            filename = f"results/task2a/interference_{interference_file}_parsec_{parsec_file}"
+            filename = (
+                f"results/task2a/interference_{interference_file.rsplit('.', 1)[0]}_{parsec_file.rsplit('.', 1)[0]}"
+            )
 
             pod = ""
             with open(filename + ".txt", "w") as f:
@@ -91,10 +93,9 @@ def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
 
                 res = subprocess.run(["kubectl", "logs", pod], stdout=f)
 
-            # kubectl logs $(kubectl get pods --selector=job-name=<job_name> --output=jsonpath='{.items[*].metadata.name}')
+            res = subprocess.run(["kubectl", "delete", "jobs", "--all"])
 
-    res = subprocess.run(["kubectl", "delete", "jobs", "--all"])
-    res = subprocess.run(["kubectl", "delete", "pods", "--all"])
+        res = subprocess.run(["kubectl", "delete", "pods", "--all"])
 
 
 if __name__ == "__main__":
