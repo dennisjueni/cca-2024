@@ -62,7 +62,7 @@ def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
             )
 
             while not jobs_ready(debug=debug):
-                time.sleep(10)
+                time.sleep(5)
 
             # We need to get the name of the job to get the logs of it
 
@@ -76,12 +76,13 @@ def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
                 print("ERROR: Job name not found")
                 return
 
-            filename = (
-                f"results/task2a/interference_{interference_file.rsplit('.', 1)[0]}_{parsec_file.rsplit('.', 1)[0]}"
-            )
+            directory_path = os.path.join("./results/task2a", interference_file.rsplit(".", 1)[0])
+            os.makedirs(directory_path, exist_ok=True)
+
+            filename = os.path.join(directory_path, f"{parsec_file.rsplit('.', 1)[0]}.txt")
 
             pod = ""
-            with open(filename + ".txt", "w") as f:
+            with open(filename, "w") as f:
                 for line in get_pods_info(debug=debug):
                     if line[0].startswith(jobname):
                         pod = line[0]
