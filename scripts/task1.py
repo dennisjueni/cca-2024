@@ -21,20 +21,19 @@ from scripts.utils import (
 )
 def task1(start: bool):
 
-    DEBUG = True
     PATH = "./interference"
-    NUM_ITERATIONS = 5
+    NUM_ITERATIONS = 3
 
-    setup(start, debug=DEBUG)
+    setup(start)
 
-    start_memcached(debug=DEBUG)
+    start_memcached()
 
     # Running tests without interference
     type = "no_interference"
     print(f"Starting pod of type {type}")
     print("Pod ready")
 
-    run_tests(type, NUM_ITERATIONS, debug=DEBUG)
+    run_tests(type, NUM_ITERATIONS)
 
     for file in os.listdir(PATH):
         if file.endswith(".yaml"):
@@ -45,20 +44,20 @@ def task1(start: bool):
             res = subprocess.run(["kubectl", "create", "-f", os.path.join(PATH, file)], capture_output=True)
             check_output(res)
 
-            while not pods_ready(debug=DEBUG):
+            while not pods_ready():
                 time.sleep(10)
 
             print("Pod ready")
-            run_tests(type, NUM_ITERATIONS, debug=DEBUG)
+            run_tests(type, NUM_ITERATIONS)
 
             # delete the pods and wait 10s to make sure the pod is deleted
             subprocess.run(["kubectl", "delete", "pods", type])
             time.sleep(10)
 
 
-def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
-    node_info = get_node_info(debug)
-    pod_info = get_pods_info(debug)
+def run_tests(type: str, num_iterations: int) -> None:
+    node_info = get_node_info()
+    pod_info = get_pods_info()
 
     client_agent_ip = ""
     client_measure_name = ""
@@ -104,28 +103,31 @@ def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
         print(f"Test {i+1} of type {type} finished")
 
 
-def setup(start: bool, debug: bool = False) -> None:
+def setup(start: bool) -> None:
     """Sets up the environment for task 1. This includes starting the cluster, launching memcached and installing memcached on the nodes client-agent and client-measure."""
 
     if start:
-        start_cluster("part1.yaml", cluster_name="part1.k8s.local", debug=debug)
+        start_cluster(
+            "part1.yaml",
+            cluster_name="part1.k8s.local",
+        )
     else:
         print("Skipped starting the cluster")
 
-    launch_memcached(debug=debug)
-    install_memcached(debug=debug)
+    launch_memcached()
+    install_memcached()
 
 
-def launch_memcached(debug: bool = False) -> None:
+def launch_memcached() -> None:
     print("########### Starting Memcached ###########")
 
     # If Memcached is already running, we don't need to do anything
-    if pods_ready(debug=debug):
+    if pods_ready():
         print("########### Memcached already running ###########")
         return
 
     create_memcached_command = ["kubectl", "create", "-f", "memcache-t1-cpuset.yaml"]
-    run_command(create_memcached_command, should_print=debug)
+    run_command(create_memcached_command)
 
     expose_memcached_command = [
         "kubectl",
@@ -141,17 +143,17 @@ def launch_memcached(debug: bool = False) -> None:
         "--protocol",
         "TCP",
     ]
-    run_command(expose_memcached_command, should_print=debug)
+    run_command(expose_memcached_command)
 
-    while not pods_ready(debug=debug):
+    while not pods_ready():
         time.sleep(10)
 
     print("########### Memcached started ###########")
 
 
-def install_memcached(debug: bool = False) -> None:
+def install_memcached() -> None:
     print("########### Installing Memcached ###########")
-    node_info = get_node_info(debug=debug)
+    node_info = get_node_info()
 
     source_path = "./scripts/install_memcached.sh"
     destination_path = "~/install_memcached.sh"
@@ -178,7 +180,7 @@ def install_memcached(debug: bool = False) -> None:
                 print(f"Memcached already installed on {line[0]}")
                 continue
 
-            copy_file_to_node(line[0], source_path=source_path, destination_path=destination_path, debug=debug)
+            copy_file_to_node(line[0], source_path=source_path, destination_path=destination_path)
 
             # Installing the file
             print(f"Installing memcached on {line[0]}")
@@ -195,11 +197,11 @@ def install_memcached(debug: bool = False) -> None:
                 f"chmod +x {destination_path} && {destination_path}",
             ]
 
-            run_command(install_command, should_print=debug)
+            run_command(install_command)
     print("########### Finished Installing Memcached ###########")
 
 
-def start_memcached(debug: bool = False) -> None:
+def start_memcached() -> None:
     print("########### Starting Memcached ###########")
     node_info = get_node_info()
     pod_info = get_pods_info()

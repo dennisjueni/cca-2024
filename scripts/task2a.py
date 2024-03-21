@@ -24,19 +24,19 @@ def task2a(start: bool):
     INTERFERENCE_PATH = "./interference-2a"
     PARSEC_PATH = "./parsec-benchmarks/part2a"
 
-    setup(start, debug=DEBUG)
+    setup(start)
 
-    run_tests(INTERFERENCE_PATH, PARSEC_PATH, debug=DEBUG)
+    run_tests(INTERFERENCE_PATH, PARSEC_PATH)
 
-    run_tests_no_interference(PARSEC_PATH, debug=DEBUG)
+    run_tests_no_interference(PARSEC_PATH)
 
 
-def setup(start: bool, debug: bool = False) -> None:
+def setup(start: bool) -> None:
     if start:
-        start_cluster("part2a.yaml", cluster_name="part2a.k8s.local", debug=debug)
+        start_cluster("part2a.yaml", cluster_name="part2a.k8s.local")
 
         # Assign the correct label to parsec node
-        for line in get_node_info(debug=debug):
+        for line in get_node_info():
             if line[0].startswith("parsec-server"):
                 res = subprocess.run(
                     ["kubectl", "label", "nodes", line[0], "cca-project-nodetype=parsec"], capture_output=True
@@ -46,7 +46,7 @@ def setup(start: bool, debug: bool = False) -> None:
         print("Skipped setting up the cluster")
 
 
-def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
+def run_tests(interference_path: str, parsec_path: str) -> None:
     # First run a loop to start the interference pods one after another, then run the parsec pods
 
     for interference_file in os.listdir(interference_path):
@@ -55,7 +55,7 @@ def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
         )
 
         # Wait until the interference pod is started
-        while not pods_ready(debug=debug):
+        while not pods_ready():
             time.sleep(10)
 
         for parsec_file in os.listdir(parsec_path):
@@ -63,13 +63,13 @@ def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
                 ["kubectl", "create", "-f", os.path.join(parsec_path, parsec_file)], capture_output=True
             )
 
-            while not jobs_ready(debug=debug):
+            while not jobs_ready():
                 time.sleep(5)
 
             # We need to get the name of the job to get the logs of it
 
             jobname = ""
-            for line in get_jobs_info(debug=debug):
+            for line in get_jobs_info():
                 if line[0].startswith("parsec"):
                     jobname = line[0]
                     break
@@ -85,7 +85,7 @@ def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
 
             pod = ""
             with open(filename, "w") as f:
-                for line in get_pods_info(debug=debug):
+                for line in get_pods_info():
                     if line[0].startswith(jobname):
                         pod = line[0]
                         break
@@ -101,15 +101,15 @@ def run_tests(interference_path: str, parsec_path: str, debug: bool) -> None:
         res = subprocess.run(["kubectl", "delete", "pods", "--all"])
 
 
-def run_tests_no_interference(parsec_path: str, debug: bool) -> None:
+def run_tests_no_interference(parsec_path: str) -> None:
     for parsec_file in os.listdir(parsec_path):
         res = subprocess.run(["kubectl", "create", "-f", os.path.join(parsec_path, parsec_file)], capture_output=True)
 
-        while not jobs_ready(debug=debug):
+        while not jobs_ready():
             time.sleep(5)
 
         jobname = ""
-        for line in get_jobs_info(debug=debug):
+        for line in get_jobs_info():
             if line[0].startswith("parsec"):
                 jobname = line[0]
                 break
@@ -125,7 +125,7 @@ def run_tests_no_interference(parsec_path: str, debug: bool) -> None:
 
         pod = ""
         with open(filename, "w") as f:
-            for line in get_pods_info(debug=debug):
+            for line in get_pods_info():
                 if line[0].startswith(jobname):
                     pod = line[0]
                     break

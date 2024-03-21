@@ -16,17 +16,20 @@ def task2b(start: bool):
     DEBUG = True
     PARSEC_PATH = "./parsec-benchmarks/part2b"
 
-    setup(start, debug=DEBUG)
+    setup(start)
 
-    run_tests(parsec_path=PARSEC_PATH, threads=[1, 2, 4, 8], debug=DEBUG)
+    run_tests(parsec_path=PARSEC_PATH, threads=[1, 2, 4, 8])
 
 
-def setup(start: bool, debug: bool = False) -> None:
+def setup(start: bool) -> None:
     if start:
-        start_cluster("part2b.yaml", cluster_name="part2b.k8s.local", debug=debug)
+        start_cluster(
+            "part2b.yaml",
+            cluster_name="part2b.k8s.local",
+        )
 
         # Assign the correct label to parsec node
-        for line in get_node_info(debug=debug):
+        for line in get_node_info():
             if line[0].startswith("parsec-server"):
                 res = subprocess.run(
                     ["kubectl", "label", "nodes", line[0], "cca-project-nodetype=parsec"], capture_output=True
@@ -36,7 +39,7 @@ def setup(start: bool, debug: bool = False) -> None:
         print("Skipped setting up the cluster")
 
 
-def run_tests(parsec_path: str, threads: list[int], debug: bool) -> None:
+def run_tests(parsec_path: str, threads: list[int]) -> None:
     for num_threads in threads:
         for parsec_file in os.listdir(parsec_path):
 
@@ -58,11 +61,11 @@ def run_tests(parsec_path: str, threads: list[int], debug: bool) -> None:
                 ["kubectl", "create", "-f", os.path.join(parsec_path, parsec_file)], capture_output=True
             )
 
-            while not jobs_ready(debug=debug):
+            while not jobs_ready():
                 time.sleep(5)
 
             jobname = ""
-            for line in get_jobs_info(debug=debug):
+            for line in get_jobs_info():
                 if line[0].startswith("parsec"):
                     jobname = line[0]
                     break
@@ -78,7 +81,7 @@ def run_tests(parsec_path: str, threads: list[int], debug: bool) -> None:
 
             pod = ""
             with open(filename, "w") as f:
-                for line in get_pods_info(debug=debug):
+                for line in get_pods_info():
                     if line[0].startswith(jobname):
                         pod = line[0]
                         break
