@@ -29,6 +29,7 @@ def task1(start: bool):
 
     start_memcached(debug=DEBUG)
 
+    # Running tests without interference
     type = "no_interference"
     print(f"Starting pod of type {type}")
     print("Pod ready")
@@ -56,9 +57,8 @@ def task1(start: bool):
 
 
 def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
-    print("########### Running tests ###########")
-    node_info = get_node_info()
-    pod_info = get_pods_info()
+    node_info = get_node_info(debug)
+    pod_info = get_pods_info(debug)
 
     client_agent_ip = ""
     client_measure_name = ""
@@ -75,7 +75,7 @@ def run_tests(type: str, num_iterations: int, debug: bool = False) -> None:
             memcached_ip = line[5]
 
     if client_agent_ip == "" or client_measure_name == "" or memcached_ip == "":
-        print("Could not find client-agent or client-measure node")
+        print("Could not find client-agent, client-measure or memcachd node")
         sys.exit(1)
 
     directory_path = os.path.join("./results/task1", type)
