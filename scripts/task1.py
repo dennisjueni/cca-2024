@@ -81,19 +81,6 @@ def run_tests(type: str, num_iterations: int, warmup: bool = True) -> None:
     os.makedirs(directory_path, exist_ok=True)
 
     if warmup:
-        mcperf_measure_command = [
-            "gcloud",
-            "compute",
-            "ssh",
-            "--zone",
-            "europe-west3-a",
-            "--ssh-key-file",
-            os.path.expanduser("~/.ssh/cloud-computing"),
-            "ubuntu@" + client_measure_name,
-            "--command",
-            f"./memcache-perf/mcperf -s {memcached_ip} --loadonly",
-        ]
-        res = subprocess.run(mcperf_measure_command)
 
         res = subprocess.run(
             [
@@ -113,22 +100,7 @@ def run_tests(type: str, num_iterations: int, warmup: bool = True) -> None:
         print(f"Warmup on type {type} finished")
 
     for i in range(num_iterations):
-        filename = os.path.join(directory_path, f"run2_{i+1}.txt")
-
-        # Load the data (Try doing it every single time to make sure we do not cache anything)
-        mcperf_measure_command = [
-            "gcloud",
-            "compute",
-            "ssh",
-            "--zone",
-            "europe-west3-a",
-            "--ssh-key-file",
-            os.path.expanduser("~/.ssh/cloud-computing"),
-            "ubuntu@" + client_measure_name,
-            "--command",
-            f"./memcache-perf/mcperf -s {memcached_ip} --loadonly",
-        ]
-        res = subprocess.run(mcperf_measure_command)
+        filename = os.path.join(directory_path, f"run3_{i+1}.txt")
 
         with open(filename, "w") as f:
             res = subprocess.run(

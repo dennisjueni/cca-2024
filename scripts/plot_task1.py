@@ -20,7 +20,7 @@ def load_run_data_folder(folder_path: str) -> List[pd.DataFrame]:
     return [
         load_run_data(os.path.join(folder_path, file))
         for file in os.listdir(folder_path)
-        if file.endswith(".txt") and file.startswith("run2")
+        if file.endswith(".txt") and file.startswith("run3")
     ]
 
 
