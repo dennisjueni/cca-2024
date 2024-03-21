@@ -33,7 +33,7 @@ def task1(start: bool):
     print(f"Starting pod of type {type}")
     print("Pod ready")
 
-    run_tests(type, NUM_ITERATIONS)
+    run_tests(type, NUM_ITERATIONS, warmup=True)
 
     for file in os.listdir(PATH):
         if file.endswith(".yaml"):
@@ -48,14 +48,14 @@ def task1(start: bool):
                 time.sleep(10)
 
             print("Pod ready")
-            run_tests(type, NUM_ITERATIONS)
+            run_tests(type, NUM_ITERATIONS, warmup=True)
 
             # delete the pods and wait 10s to make sure the pod is deleted
             subprocess.run(["kubectl", "delete", "pods", type])
             time.sleep(10)
 
 
-def run_tests(type: str, num_iterations: int) -> None:
+def run_tests(type: str, num_iterations: int, warmup: bool = True) -> None:
     node_info = get_node_info()
     pod_info = get_pods_info()
 
@@ -80,8 +80,55 @@ def run_tests(type: str, num_iterations: int) -> None:
     directory_path = os.path.join("./results/task1", type)
     os.makedirs(directory_path, exist_ok=True)
 
+    if warmup:
+        mcperf_measure_command = [
+            "gcloud",
+            "compute",
+            "ssh",
+            "--zone",
+            "europe-west3-a",
+            "--ssh-key-file",
+            os.path.expanduser("~/.ssh/cloud-computing"),
+            "ubuntu@" + client_measure_name,
+            "--command",
+            f"./memcache-perf/mcperf -s {memcached_ip} --loadonly",
+        ]
+        res = subprocess.run(mcperf_measure_command)
+
+        res = subprocess.run(
+            [
+                "gcloud",
+                "compute",
+                "ssh",
+                "--zone",
+                "europe-west3-a",
+                "--ssh-key-file",
+                os.path.expanduser("~/.ssh/cloud-computing"),
+                "ubuntu@" + client_measure_name,
+                "--command",
+                f"./memcache-perf/mcperf -s {memcached_ip} -a {client_agent_ip} --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 5 -w 2 --scan 5000:55000:5000",
+            ]
+        )
+
+        print(f"Warmup on type {type} finished")
+
     for i in range(num_iterations):
-        filename = os.path.join(directory_path, f"run_{i+1}.txt")
+        filename = os.path.join(directory_path, f"run2_{i+1}.txt")
+
+        # Load the data (Try doing it every single time to make sure we do not cache anything)
+        mcperf_measure_command = [
+            "gcloud",
+            "compute",
+            "ssh",
+            "--zone",
+            "europe-west3-a",
+            "--ssh-key-file",
+            os.path.expanduser("~/.ssh/cloud-computing"),
+            "ubuntu@" + client_measure_name,
+            "--command",
+            f"./memcache-perf/mcperf -s {memcached_ip} --loadonly",
+        ]
+        res = subprocess.run(mcperf_measure_command)
 
         with open(filename, "w") as f:
             res = subprocess.run(

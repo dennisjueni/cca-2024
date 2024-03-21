@@ -1,10 +1,8 @@
 from itertools import cycle
-import sys
 import pandas as pd
-import re, os
+import os
 from typing import Iterable, List, Tuple
 import numpy as np
-from pandas import DataFrame
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -19,10 +17,14 @@ def load_run_data(file_path: str) -> pd.DataFrame:
 
 
 def load_run_data_folder(folder_path: str) -> List[pd.DataFrame]:
-    return [load_run_data(os.path.join(folder_path, file)) for file in os.listdir(folder_path) if file.endswith(".txt")]
+    return [
+        load_run_data(os.path.join(folder_path, file))
+        for file in os.listdir(folder_path)
+        if file.endswith(".txt") and file.startswith("run2")
+    ]
 
 
-def get_mean_std(df_itr: Iterable[DataFrame], key: str) -> Tuple[np.ndarray, np.ndarray]:
+def get_mean_std(df_itr: Iterable[pd.DataFrame], key: str) -> Tuple[np.ndarray, np.ndarray]:
     """
     Get mean and std of a key from a list of dataframes.
 
@@ -48,8 +50,8 @@ def plt_setup(xlim, ylim, title=None, xlabel=None, ylabel=None):
     # set ticks on x axis to every 5000
     plt.xticks(np.arange(0, xlim[1], 5000), labels=[f"{int(i//1000)} k" for i in np.arange(0, xlim[1], 5000)])
     plt.xlabel(xlabel or "QPS [queries/s]", labelpad=10, fontsize=12)  # Adjust labelpad and fontsize
-    plt.ylabel(ylabel or "Latency [ms] 95th Percentile", labelpad=10, fontsize=12)
-    plt.title(title or "Latency 95th Percentile wrt. QPS", pad=10, fontsize=12)
+    plt.ylabel(ylabel or "95th Percentile Latency [ms]", labelpad=10, fontsize=12)
+    plt.title(title or "95th Percentile Latency wrt. QPS", pad=10, fontsize=12)
 
 
 def plot_errorbar(x, y, xerr, yerr, label, color="black", marker="o"):
@@ -80,7 +82,6 @@ if __name__ == "__main__":
             color=next(colors),
         )
     plt.legend(loc="upper right")
-    # plt.subplots_adjust(bottom=0.15)
     plt.subplots_adjust(left=0.08, right=0.92, bottom=0.08, top=0.95)
-    plt.savefig("results/latency_95th_percentile_qps_part1.png")
+    plt.savefig("results/task1/plots/latency_95th_percentile_qps_part1.png")
     plt.show()
