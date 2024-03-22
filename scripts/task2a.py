@@ -20,15 +20,14 @@ from scripts.utils import (
 )
 def task2a(start: bool):
 
-    DEBUG = True
     INTERFERENCE_PATH = "./interference-2a"
     PARSEC_PATH = "./parsec-benchmarks/part2a"
 
     setup(start)
 
-    run_tests(INTERFERENCE_PATH, PARSEC_PATH)
-
     run_tests_no_interference(PARSEC_PATH)
+
+    run_tests(INTERFERENCE_PATH, PARSEC_PATH)
 
 
 def setup(start: bool) -> None:
@@ -58,6 +57,9 @@ def run_tests(interference_path: str, parsec_path: str) -> None:
         while not pods_ready():
             time.sleep(10)
 
+        # Just making very sure the inference pod has started
+        time.sleep(10)
+
         for parsec_file in os.listdir(parsec_path):
             res = subprocess.run(
                 ["kubectl", "create", "-f", os.path.join(parsec_path, parsec_file)], capture_output=True
@@ -81,7 +83,7 @@ def run_tests(interference_path: str, parsec_path: str) -> None:
             directory_path = os.path.join("./results/task2a", interference_file.rsplit(".", 1)[0])
             os.makedirs(directory_path, exist_ok=True)
 
-            filename = os.path.join(directory_path, f"{parsec_file.rsplit('.', 1)[0]}.txt")
+            filename = os.path.join(directory_path, f"2-{parsec_file.rsplit('.', 1)[0]}.txt")
 
             pod = ""
             with open(filename, "w") as f:
@@ -97,6 +99,9 @@ def run_tests(interference_path: str, parsec_path: str) -> None:
                 res = subprocess.run(["kubectl", "logs", pod], stdout=f)
 
             res = subprocess.run(["kubectl", "delete", "jobs", "--all"])
+
+            print("Deleted the job, sleeping for 10 seconds to make sure the pods are deleted")
+            time.sleep(10)
 
         res = subprocess.run(["kubectl", "delete", "pods", "--all"])
 
@@ -121,7 +126,7 @@ def run_tests_no_interference(parsec_path: str) -> None:
         directory_path = "./results/task2a/no_interference"
         os.makedirs(directory_path, exist_ok=True)
 
-        filename = os.path.join(directory_path, f"{parsec_file.rsplit('.', 1)[0]}.txt")
+        filename = os.path.join(directory_path, f"2-{parsec_file.rsplit('.', 1)[0]}.txt")
 
         pod = ""
         with open(filename, "w") as f:
@@ -137,6 +142,9 @@ def run_tests_no_interference(parsec_path: str) -> None:
             res = subprocess.run(["kubectl", "logs", pod], stdout=f)
 
         res = subprocess.run(["kubectl", "delete", "jobs", "--all"])
+
+        print("Deleted the job, sleeping for 10 seconds to make sure the pods are deleted")
+        time.sleep(10)
 
 
 if __name__ == "__main__":
