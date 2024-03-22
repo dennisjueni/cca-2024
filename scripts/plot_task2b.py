@@ -74,10 +74,10 @@ def main():
         time_taken = []
 
         folder = os.path.join(base_folder, f"parsec-{folder}")
-        base_time = get_time(os.path.join(folder, "num_threads_1.txt"))
+        base_time = get_time(os.path.join(folder, "2-num_threads_1.txt"))
 
         for count in thread_counts:
-            file_name = f"num_threads_{count}.txt"
+            file_name = f"2-num_threads_{count}.txt"
             file_path = os.path.join(folder, file_name)
             time_n = get_time(file_path)
             speedup = base_time / time_n if time_n else 0
