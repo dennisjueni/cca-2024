@@ -17,10 +17,14 @@ def find_real_time(lines) -> str | None:
     return None
 
 
-def read_times(folder):
+def read_times(folder: str) -> dict[str, float]:
     """Read execution times from text files in a given folder."""
     times = {}
     for filename in os.listdir(folder):
+
+        if not filename.startswith("2-parsec"):
+            continue
+
         with open(os.path.join(folder, filename)) as f:
             lines = f.readlines()
             time_lines = find_real_time(lines)
@@ -103,7 +107,7 @@ def main():
 
         for job_filename, time in interference_times.items():
             # Normalize job name
-            job_name = job_filename.replace("parsec-", "").replace(".txt", "")
+            job_name = job_filename.replace("2-parsec-", "").replace(".txt", "")
             if job_name not in data:
                 raise ValueError(f"Unknown job name: {job_name}")
 
