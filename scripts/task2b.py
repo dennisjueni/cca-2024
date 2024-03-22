@@ -13,7 +13,6 @@ from scripts.utils import check_output, get_jobs_info, get_node_info, get_pods_i
 )
 def task2b(start: bool):
 
-    DEBUG = True
     PARSEC_PATH = "./parsec-benchmarks/part2b"
 
     setup(start)
@@ -77,7 +76,7 @@ def run_tests(parsec_path: str, threads: list[int]) -> None:
             directory_path = os.path.join("./results/task2b", parsec_file.rsplit(".", 1)[0])
             os.makedirs(directory_path, exist_ok=True)
 
-            filename = os.path.join(directory_path, f"num_threads_{num_threads}.txt")
+            filename = os.path.join(directory_path, f"2-num_threads_{num_threads}.txt")
 
             pod = ""
             with open(filename, "w") as f:
