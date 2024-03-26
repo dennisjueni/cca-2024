@@ -47,7 +47,7 @@ def plt_setup(xlim, ylim, title=None, xlabel=None, ylabel=None):
     plt.xlim(xlim)
     plt.ylim(ylim)
     plt.xticks([1, 2, 4, 8])
-    plt.yticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    plt.yticks([1, 2, 3, 4, 5, 6, 7])
     plt.xlabel(xlabel or "Number of Threads", labelpad=10, fontsize=12)  # Adjust labelpad and fontsize
     plt.ylabel(ylabel or "Speedup", labelpad=10, fontsize=12)
     plt.title(title or "Speedup when using multiple threads", pad=10, fontsize=12)
@@ -62,7 +62,7 @@ def main():
     base_folder = "results/task2b"
     thread_counts = [1, 2, 4, 8]
 
-    plt_setup(xlim=(0.925, 8.075), ylim=(0.5, 11))
+    plt_setup(xlim=(0.925, 8.075), ylim=(0.5, 7))
     colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
     folder_names = ["radix", "freqmine", "vips", "ferret", "blackscholes", "dedup", "canneal"]

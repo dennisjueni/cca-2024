@@ -8,6 +8,16 @@ import seaborn as sns
 
 MARKERS = ["o", "v", "^", "<", ">", "s", "p", "*", "h", "H", "D", "d", "P", "X"]
 
+label_mapping = {
+    "ibench-l1d": "iBench L1D",
+    "ibench-l2": "iBench L2",
+    "ibench-membw": "iBench MemBW",
+    "no_interference": "No Interference",
+    "ibench-l1i": "iBench L1I",
+    "ibench-llc": "iBench LLC",
+    "ibench-cpu": "iBench CPU",
+}
+
 
 def load_run_data(file_path: str) -> pd.DataFrame:
     df = pd.read_csv(file_path, delimiter=" ", skipinitialspace=True, skipfooter=2, engine="python")
@@ -78,7 +88,7 @@ if __name__ == "__main__":
             qps_std,
             p95_std,
             marker=MARKERS[i % len(MARKERS)],
-            label=f"{benchmark}",
+            label=f"{label_mapping[benchmark]}",
             color=next(colors),
         )
     plt.legend(loc="upper right")
