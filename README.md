@@ -44,9 +44,20 @@ delete_cluster
 poetry run delete_cluster
 ```
 
+## Part 3
+
+- Kubernetes Cluster consisting of (`part3.yml`) :
+  - 1 Master VM
+  - 3 (2 agents + 1 measure) `mcperf` VMs
+  - 3 heterogeneous `nemcached` VMs
+- Goal : Scheduling (for best possible speed) of seven batch workloads (`blackscholes`, `canneal`, ...) under the constraint that `memcached` responds to 95% of requests within 1 millisecond, even with 30,000 requests per second (QPS). I.e.
+  $$s^* = \underset{s \in \text{ Schedules}}{\arg\min} \sum_{j\in\text{ Jobs}} t_j(\text{s}) \quad \text{ s.t.}$$
+  1. `memcached` responds to $95\%$ of requests within $1$ms given $\text{QPS} \leq 30\text{k}\frac{\text{requests}}{s}$
+  2. No errors (e.g. out of memory)
+
 ## FAQ
 - **How to select the correct Python interpreter path to make MissingImportWarnings disappear?**
 
-    First, find the place where poetry created the venv.
+    First, find the place where poetry created the venv. (Should be in the project root if `poetry config virtualenvs.in-project true`)
     You can do that using this command when inside of the poetry shell: `bash poetry env info -p`
     Then simply select this as Python interpreter path in VSCode
