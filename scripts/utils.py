@@ -56,6 +56,12 @@ def start_cluster(yaml_file: str, cluster_name: str) -> None:
     validate_command = ["kops", "validate", "cluster", "--wait", "10m"]
     run_command(validate_command, environment_dict)
 
+    view_command = ["kops", "get", "nodes", "-o", "wide"]
+    run_command(view_command, environment_dict)
+    print(
+        "In order to ssh into one of the nodes, use:\n'gcloud compute ssh --ssh-key-file ~/.ssh/cloud-computing ubuntu@<MACHINE_NAME> --zone europe-west3-a'"
+    )
+
     print("########### Cluster started ###########")
 
 
