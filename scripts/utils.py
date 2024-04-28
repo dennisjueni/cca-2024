@@ -32,7 +32,10 @@ def run_command(command: list[str], env: dict[str, str] = env) -> subprocess.Com
     print(res.stdout.decode("utf-8"))
     return res
 
-def scp_command(source_path: str, destination_path: str, node: str, env: dict[str, str] = env) -> subprocess.CompletedProcess[bytes]:
+
+def scp_command(
+    source_path: str, destination_path: str, node: str, env: dict[str, str] = env
+) -> subprocess.CompletedProcess[bytes]:
     command = [
         "gcloud",
         "compute",
@@ -42,9 +45,10 @@ def scp_command(source_path: str, destination_path: str, node: str, env: dict[st
         "--zone",
         env.get("ZONE", "europe-west3-a"),
         source_path,
-        f"{env.get("USER", "ubuntu")}@{node}:{destination_path}",
+        f"{env.get('USER', 'ubuntu')}@{node}:{destination_path}",
     ]
     return run_command(command, env)
+
 
 def ssh_command(node: str, command: str, env: dict[str, str] = env) -> subprocess.CompletedProcess[bytes]:
     ssh_command = [
@@ -55,11 +59,12 @@ def ssh_command(node: str, command: str, env: dict[str, str] = env) -> subproces
         env.get("ZONE", "europe-west3-a"),
         "--ssh-key-file",
         os.path.expanduser("~/.ssh/cloud-computing"),
-        f"{env.get("USER", "ubuntu")}@{node}",
+        f"{env.get('USER', 'ubuntu')}@{node}",
         "--command",
         command,
     ]
     return run_command(ssh_command, env)
+
 
 def start_cluster(yaml_file: str, cluster_name: str, env=env) -> None:
     """
@@ -143,7 +148,7 @@ def get_info(resource_type: str) -> list[list[str]]:
     return info
 
 
-def get_node_info(d : Optional[dict]= None) -> list[list[str]]:
+def get_node_info(d: Optional[dict] = None) -> list[list[str]]:
     # Return: [ [node_name, status, roles, age, version, internal_ip, external_ip], ... ]
     info = get_info("nodes")
     if d is not None:
