@@ -27,7 +27,9 @@ build-backend = "poetry.core.masonry.api"
 run_task1 = 'scripts.task1:task1'
 run_task2a = 'scripts.task2a:task2a'
 run_task2b = 'scripts.task2b:task2b'
+run_task3 = 'scripts.task3:task3'
 delete_cluster = 'scripts.delete:delete_cluster_cli'
+delete_pods = 'scripts.delete:delete_pods'
 
 [tool.black]
 line-length = 120

@@ -50,7 +50,14 @@ def scp_command(
     return run_command(command, env)
 
 
-def ssh_command(node: str, command: str, env: dict[str, str] = env) -> subprocess.CompletedProcess[bytes]:
+def ssh_command(
+    node: str,
+    command: str,
+    env: dict[str, str] = env,
+    is_async: bool = False,
+    stdout: int = subprocess.PIPE,
+    stderr: int = subprocess.PIPE,
+) -> subprocess.CompletedProcess[bytes] | subprocess.Popen[bytes]:
     ssh_command = [
         "gcloud",
         "compute",
@@ -63,7 +70,12 @@ def ssh_command(node: str, command: str, env: dict[str, str] = env) -> subproces
         "--command",
         command,
     ]
-    return run_command(ssh_command, env)
+    logger.info(f"Running command: {ssh_command} on node {node} is_async: {is_async}")
+    return (
+        run_command(ssh_command, env)
+        if not is_async
+        else subprocess.Popen(ssh_command, env=env, stdout=stdout, stderr=stderr)
+    )
 
 
 def start_cluster(yaml_file: str, cluster_name: str, env=env) -> None:
@@ -177,12 +189,24 @@ def get_jobs_info() -> list[list[str]]:
 
 def pods_ready() -> bool:
     info = get_pods_info()
+    if len(info) == 0:
+        return False
+    for pod in info:
+        logger.info(pod)
+        if pod[1] != "1/1" or pod[2] != "Running":
+            return False
+    return True
 
+
+def pods_completed() -> bool:
+    info = get_pods_info()
     if len(info) == 0:
         return False
 
     for pod in info:
-        if pod[1] != "1/1" or pod[2] != "Running":
+        if "memcached" in pod[0]:
+            continue
+        if not (pod[2] == "Completed" or pod[2] == "Error"):  # Error is also a final state
             return False
     return True
 

@@ -1,5 +1,6 @@
 import click
-from scripts.utils import delete_cluster
+from loguru import logger
+from scripts.utils import delete_cluster, run_command
 
 
 @click.command()
@@ -7,6 +8,15 @@ from scripts.utils import delete_cluster
 def delete_cluster_cli(cluster_name: str) -> None:
 
     delete_cluster(cluster_name)
+    print("########### Cluster deleted ###########")
+
+
+@click.command()
+def delete_pods() -> None:
+    logger.info("Deleting all jobs.")
+    run_command("kubectl delete jobs --all".split())
+    logger.info("Deleting all pods.")
+    run_command("kubectl delete pods --all".split())
     print("########### Cluster deleted ###########")
 
 
