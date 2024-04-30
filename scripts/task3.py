@@ -46,6 +46,7 @@ def task3(start: bool):
         if start:
             # setup cluster using kops and part3.yaml
             start_cluster(part=Part.PART3)
+
         start_memcached(env)
         logger.info("Memcached started")
         start_mcperf(env)
@@ -176,12 +177,12 @@ def start_mcperf(env: dict) -> None:
             node = line[0]
             logger.info(f"Copying mcperf files to {line[0]}")
             res = scp_command(
-                "./scripts/install_mcperf.sh",  # local file
-                "~/install_mcperf.sh",  # remote file
+                "./scripts/install_mcperf_dynamic.sh",  # local file
+                "~/install_mcperf_dynamic.sh",  # remote file
                 node,
             )
             # run make_mcperf.sh on the node
-            res = ssh_command(node, "chmod +x ~/install_mcperf.sh && ~/install_mcperf.sh")
+            res = ssh_command(node, "chmod +x ~/install_mcperf_dynamic.sh && ~/install_mcperf_dynamic.sh")
             #
             ssh_command(node, "ls -al")
             if node.startswith("client-agent-a"):
