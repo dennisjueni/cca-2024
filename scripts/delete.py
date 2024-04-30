@@ -14,9 +14,9 @@ def delete_cluster_cli(cluster_name: str) -> None:
 @click.command()
 def delete_pods() -> None:
     logger.info("Deleting all jobs.")
-    run_command("kubectl delete jobs --all".split())
+    run_command(["kubectl", "delete", "jobs", "--all"])
     logger.info("Deleting all pods.")
-    run_command("kubectl delete pods --all".split())
+    run_command(["kubectl", "delete", "pods", "--all"])
     print("########### Cluster deleted ###########")
 
 

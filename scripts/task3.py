@@ -10,6 +10,7 @@ from typing import Optional
 
 from loguru import logger
 
+from scripts.delete import delete_pods
 from scripts.utils import (
     Part,
     copy_file_to_node,
@@ -68,8 +69,8 @@ def task3(start: bool):
         # cleanup
         for process in PROCESSES:
             process.kill()
-        run_command("kubectl delete jobs --all".split())
-        run_command("kubectl delete pods --all".split())
+
+        delete_pods()
 
 
 def start_memcached() -> None:
@@ -128,36 +129,34 @@ def install_mcperf() -> None:
                 "--command",
                 f"test -f {destination_path} && echo 'already installed' || echo '-'",
             ]
-            res = subprocess.run(check_command, env=dict(os.environ), capture_output=True)
 
-            if "already installed" in res.stdout.decode("utf-8"):
+            check_command = f"test -f {destination_path} && echo 'already installed' || echo '-'"
+            res = ssh_command(
+                line[0],
+                check_command,
+                is_async=False,
+            )
+
+            if "already installed" in res.stdout.decode("utf-8"):  # type: ignore
                 logger.info(f"Memcached already installed on {line[0]}")
                 continue
 
             copy_file_to_node(line[0], source_path=source_path, destination_path=destination_path)
             logger.info(f"Copyied the mcperf install script to {line[0]}")
 
-            # Installing the file
-            install_command = [
-                "gcloud",
-                "compute",
-                "ssh",
-                f"ubuntu@{line[0]}",
-                "--zone",
-                "europe-west3-a",
-                "--ssh-key-file",
-                os.path.expanduser("~/.ssh/cloud-computing"),
-                "--command",
-                f"chmod +x {destination_path} && {destination_path}",
-            ]
-
-            run_command(install_command)
+            install_command = f"chmod +x {destination_path} && {destination_path}"
+            ssh_command(
+                line[0],
+                install_command,
+                is_async=False,
+            )
 
     logger.success("########### Finished Installing mcperf on all 3 machines ###########")
 
 
 def start_mcperf() -> None:
     logger.info("########### Starting Memcached on all 3 machines ###########")
+    global PROCESSES
 
     node_info = get_node_info()
     pod_info = get_pods_info()
@@ -191,33 +190,37 @@ def start_mcperf() -> None:
         sys.exit(1)
 
     mcperf_agent_a_command = "./memcache-perf-dynamic/mcperf -T 2 -A"
-    ssh_command(
+    res = ssh_command(
         client_agent_a_name,
         mcperf_agent_a_command,
         is_async=True,
     )
+    PROCESSES.append(res)
 
     mcperf_agent_b_command = "./memcache-perf-dynamic/mcperf -T 4 -A"
-    ssh_command(
+    res = ssh_command(
         client_agent_b_name,
         mcperf_agent_b_command,
         is_async=True,
     )
+    PROCESSES.append(res)
 
     mc_perf_measure_load_command = f"~/memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly"
-    ssh_command(client_measure_name, mc_perf_measure_load_command, is_async=True)
+    res = ssh_command(client_measure_name, mc_perf_measure_load_command, is_async=True)
+    PROCESSES.append(res)
 
     log_file = open(os.path.join(LOG_RESULTS, "mcperf-loadonly.txt"), "w")
     error_file = open(os.path.join(LOG_RESULTS, "mcperf-loadonly.error"), "w")
     mc_perf_measure_start_command = f"./memcache-perf/mcperf -s {memcached_ip} -a {client_agent_a_ip} -a {client_agent_b_ip} --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30500:5"
 
-    ssh_command(
+    res = ssh_command(
         client_measure_name,
         mc_perf_measure_start_command,
         is_async=True,
         stdout=log_file.fileno(),
         stderr=error_file.fileno(),
     )
+    PROCESSES.append(res)
 
 
 def schedule_batch_jobs() -> None:
