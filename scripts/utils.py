@@ -2,8 +2,10 @@ import os
 import subprocess
 import sys
 from typing import Optional
-from loguru import logger
 from enum import Enum
+
+from loguru import logger
+
 
 #### SETUP ENVIRONMENT VARIABLES ########
 
@@ -31,23 +33,6 @@ def run_command(command: list[str], env: dict[str, str] = env) -> subprocess.Com
 
     logger.success(res.stdout.decode("utf-8"))
     return res
-
-
-def scp_command(
-    source_path: str, destination_path: str, node: str, env: dict[str, str] = env
-) -> subprocess.CompletedProcess[bytes]:
-    command = [
-        "gcloud",
-        "compute",
-        "scp",
-        "--ssh-key-file",
-        os.path.expanduser("~/.ssh/cloud-computing"),
-        "--zone",
-        env.get("ZONE", "europe-west3-a"),
-        source_path,
-        f"{env.get('USER', 'ubuntu')}@{node}:{destination_path}",
-    ]
-    return run_command(command, env)
 
 
 def ssh_command(
@@ -172,17 +157,20 @@ def get_info(resource_type: str) -> list[list[str]]:
 def get_node_info(d: Optional[dict] = None) -> list[list[str]]:
     # Return: [ [node_name, status, roles, age, version, internal_ip, external_ip], ... ]
     info = get_info("nodes")
-    if d is not None:
-        for line in info:
-            d[line[0][:-5]] = {
-                "node_name": line[0],
-                "status": line[1],
-                "roles": line[2],
-                "age": line[3],
-                "version": line[4],
-                "internal_ip": line[5],
-                "external_ip": line[6],
-            }
+
+    if d is None:
+        d = {}
+
+    for line in info:
+        d[line[0][:-5]] = {
+            "node_name": line[0],
+            "status": line[1],
+            "roles": line[2],
+            "age": line[3],
+            "version": line[4],
+            "internal_ip": line[5],
+            "external_ip": line[6],
+        }
     return info
 
 

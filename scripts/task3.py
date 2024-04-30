@@ -1,24 +1,25 @@
-from time import sleep
+import sys
 import subprocess
 import click
 import time
 import os
 import yaml
 import tempfile
+from time import sleep
+from typing import Optional
 
 from loguru import logger
 
 from scripts.utils import (
     Part,
+    copy_file_to_node,
     pods_completed,
-    scp_command,
     ssh_command,
     start_cluster,
     run_command,
     pods_ready,
     get_node_info,
     get_pods_info,
-    env,
 )
 
 NODES = [
@@ -47,16 +48,18 @@ def task3(start: bool):
             # setup cluster using kops and part3.yaml
             start_cluster(part=Part.PART3)
 
-        start_memcached(env)
-        logger.info("Memcached started")
-        start_mcperf(env)
-        logger.info("mcperf started")
-        schedule_batch_jobs(env)
-        logger.info("Batch jobs scheduled")
+        start_memcached()
+
+        install_mcperf()
+
+        start_mcperf()
+
+        schedule_batch_jobs()
+
         # wait for jobs to finish
         while not pods_completed():
             sleep(5)
-        # log_pods(env)
+
         log_time()
 
     except Exception as e:
@@ -69,21 +72,155 @@ def task3(start: bool):
         run_command("kubectl delete pods --all".split())
 
 
-def log_time():
-    get_command = "kubectl get pods -o json > results.json"
-    os.system(get_command)
-    get_command = f"python3 get_time.py results.json > {os.path.join(LOG_RESULTS, 'execution_time.txt')}"
-    os.system(get_command)
+def start_memcached() -> None:
+    logger.info("########### Starting Memcached ###########")
+
+    # If Memcached is already running, we don't need to do anything
+    if is_memcached_ready():
+        logger.info("########### Memcached already running ###########")
+        return
+
+    create_memcached_command = ["kubectl", "create", "-f", "memcache-t1-cpuset-part3.yaml"]
+    run_command(create_memcached_command)
+
+    expose_memcached_command = [
+        "kubectl",
+        "expose",
+        "pod",
+        "some-memcached",
+        "--name",
+        "some-memcached-11211",
+        "--type",
+        "LoadBalancer",
+        "--port",
+        "11211",
+        "--protocol",
+        "TCP",
+    ]
+    run_command(expose_memcached_command)
+
+    while not pods_ready():
+        time.sleep(5)
+
+    logger.success("########### Memcached started ###########")
 
 
-def start_memcached(env: dict = env) -> None:
-    # Start memcached pod using `kubectl create -f memcached.yaml`
-    path = os.path.join(".", "memcache-t1-cpuset-part3.yaml")
-    # TODO : is sync?
-    run_command(f"kubectl create -f {path}".split())
+def install_mcperf() -> None:
+    # memcached should already be ready since we wait for it in install_memcached
+    assert is_memcached_ready(), "Memcached pod not ready"
+
+    source_path = "./scripts/install_mcperf_dynamic.sh"
+    destination_path = "~/install_mcperf_dynamic.sh"
+
+    for line in get_node_info():
+        if line[0].startswith("client-agent-") or line[0].startswith("client-measure-"):
+
+            # First we check if we have already copied the file to the node, if so, we do not do it again
+            check_command = [
+                "gcloud",
+                "compute",
+                "ssh",
+                f"ubuntu@{line[0]}",
+                "--zone",
+                "europe-west3-a",
+                "--ssh-key-file",
+                os.path.expanduser("~/.ssh/cloud-computing"),
+                "--command",
+                f"test -f {destination_path} && echo 'already installed' || echo '-'",
+            ]
+            res = subprocess.run(check_command, env=dict(os.environ), capture_output=True)
+
+            if "already installed" in res.stdout.decode("utf-8"):
+                logger.info(f"Memcached already installed on {line[0]}")
+                continue
+
+            copy_file_to_node(line[0], source_path=source_path, destination_path=destination_path)
+            logger.info(f"Copyied the mcperf install script to {line[0]}")
+
+            # Installing the file
+            install_command = [
+                "gcloud",
+                "compute",
+                "ssh",
+                f"ubuntu@{line[0]}",
+                "--zone",
+                "europe-west3-a",
+                "--ssh-key-file",
+                os.path.expanduser("~/.ssh/cloud-computing"),
+                "--command",
+                f"chmod +x {destination_path} && {destination_path}",
+            ]
+
+            run_command(install_command)
+
+    logger.success("########### Finished Installing mcperf on all 3 machines ###########")
 
 
-def schedule_batch_jobs(env: dict) -> None:
+def start_mcperf() -> None:
+    logger.info("########### Starting Memcached on all 3 machines ###########")
+
+    node_info = get_node_info()
+    pod_info = get_pods_info()
+
+    client_agent_a_name = None
+    client_agent_b_name = None
+    client_measure_name = None
+    memcached_ip = get_pod_ip("some-memcached")
+    client_agent_a_ip = get_node_ip("client-agent-a")
+    client_agent_b_ip = get_node_ip("client-agent-b")
+
+    for line in node_info:
+        if line[0].startswith("client-agent-a"):
+            client_agent_a_name = line[0]
+        elif line[0].startswith("client-agent-b"):
+            client_agent_b_name = line[0]
+        elif line[0].startswith("client-measure"):
+            client_measure_name = line[0]
+
+    for line in pod_info:
+        if line[0].startswith("some-memcached"):
+            memcached_ip = line[5]
+
+    if (
+        client_agent_a_name is None
+        or client_agent_b_name is None
+        or client_measure_name is None
+        or memcached_ip is None
+    ):
+        print("Could not find client-agent-a, client-agent-b, client-measure, or memcached node")
+        sys.exit(1)
+
+    mcperf_agent_a_command = "./memcache-perf-dynamic/mcperf -T 2 -A"
+    ssh_command(
+        client_agent_a_name,
+        mcperf_agent_a_command,
+        is_async=True,
+    )
+
+    mcperf_agent_b_command = "./memcache-perf-dynamic/mcperf -T 4 -A"
+    ssh_command(
+        client_agent_b_name,
+        mcperf_agent_b_command,
+        is_async=True,
+    )
+
+    mc_perf_measure_load_command = f"~/memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly"
+    ssh_command(client_measure_name, mc_perf_measure_load_command, is_async=True)
+
+    log_file = open(os.path.join(LOG_RESULTS, "mcperf-loadonly.txt"), "w")
+    error_file = open(os.path.join(LOG_RESULTS, "mcperf-loadonly.error"), "w")
+    mc_perf_measure_start_command = f"./memcache-perf/mcperf -s {memcached_ip} -a {client_agent_a_ip} -a {client_agent_b_ip} --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30500:5"
+
+    ssh_command(
+        client_measure_name,
+        mc_perf_measure_start_command,
+        is_async=True,
+        stdout=log_file.fileno(),
+        stderr=error_file.fileno(),
+    )
+
+
+def schedule_batch_jobs() -> None:
     # blackscholes,canneal,dedup,ferret,freqmine,radix,vips
     schedule_single_job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)  # fourth
     schedule_single_job("canneal", "canneal", "node-b-4core", "2,3", 2)  # fifth
@@ -107,26 +244,29 @@ def schedule_single_job(
     file.close()
 
 
-def get_node_ip(node_name: str, env: dict = env) -> str:
+def get_node_ip(node_name: str) -> Optional[str]:
     info = get_node_info()
     for line in info:
         print(line)
         if line[0].startswith(node_name):
             return line[5]
+    return None
 
 
-def get_pod_ip(pod_name: str, env: dict = env) -> str:
+def get_pod_ip(pod_name: str) -> Optional[str]:
     info = get_pods_info()
     for line in info:
         if "memcached" in line[0]:
             return line[5]
 
+    return None
 
-def is_memcached_ready(env: dict = env) -> bool:
+
+def is_memcached_ready() -> bool:
     return pods_ready()
 
 
-def log_pods(env: dict = env) -> None:
+def log_pods() -> None:
     for info in get_pods_info():
         name = info[0]
         res = subprocess.run(["kubectl", "logs", name], capture_output=True)
@@ -161,73 +301,11 @@ def modified_yaml_file(file_path, **kwargs):
     return temp_file
 
 
-def start_mcperf(env: dict) -> None:
-    # Start mcperf pod(s) using `kubectl create -f mcperf.yaml`
-    # use make_mcperf.sh script to build mcperf on client-agent and client-measure
-    global PROCESSES
-    for _ in range(10):
-        if is_memcached_ready():
-            break
-        time.sleep(2)
-    assert is_memcached_ready(), "Memcached pod not ready"
-    d = {}
-    for line in get_node_info(d):
-        if line[0].startswith("client-agent-") or line[0].startswith("client-measure-"):
-            # copy make_mcperf.sh to the node
-            node = line[0]
-            logger.info(f"Copying mcperf files to {line[0]}")
-            res = scp_command(
-                "./scripts/install_mcperf_dynamic.sh",  # local file
-                "~/install_mcperf_dynamic.sh",  # remote file
-                node,
-            )
-            # run make_mcperf.sh on the node
-            res = ssh_command(node, "chmod +x ~/install_mcperf_dynamic.sh && ~/install_mcperf_dynamic.sh")
-            #
-            ssh_command(node, "ls -al")
-            if node.startswith("client-agent-a"):
-                res = ssh_command(
-                    node,
-                    "~/memcache-perf-dynamic/mcperf -T 2 -A",
-                    is_async=True,
-                )
-            elif node.startswith("client-agent-b"):
-                log_file = open(os.path.join(LOG_RESULTS, "mcperf-agent-b.txt"), "w")
-                error_file = open(os.path.join(LOG_RESULTS, "mcperf-agent-b.error"), "w")
-                res = ssh_command(
-                    node,
-                    "~/memcache-perf-dynamic/mcperf -T 4 -A",
-                    is_async=True,
-                    stdout=log_file,
-                    stderr=error_file,
-                )
-                PROCESSES.append(res)
-
-            elif node.startswith("client-measure"):
-                MEMCACHED_IP = get_pod_ip("memcached")
-                INTERNAL_AGENT_A_IP = get_node_ip("client-agent-a")
-                INTERNAL_AGENT_B_IP = get_node_ip("client-agent-b")
-                log_file = open(os.path.join(LOG_RESULTS, "mcperf-loadonly.txt"), "w")
-                error_file = open(os.path.join(LOG_RESULTS, "mcperf-loadonly.error"), "w")
-                res = ssh_command(
-                    node,
-                    f"~/memcache-perf-dynamic/mcperf -s {MEMCACHED_IP} --loadonly",
-                    is_async=True,
-                    stdout=log_file,
-                    stderr=error_file,
-                )
-                PROCESSES.append(res)
-                log_file = open(os.path.join(LOG_RESULTS, "mcperf.txt"), "w")
-                error_file = open(os.path.join(LOG_RESULTS, "mcperf.error"), "w")
-                res = ssh_command(
-                    node,
-                    f"~/memcache-perf-dynamic/mcperf -s {MEMCACHED_IP} -a {INTERNAL_AGENT_A_IP} -a {INTERNAL_AGENT_B_IP} \
-                    --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30500:5",
-                    is_async=True,
-                    stdout=log_file,
-                    stderr=error_file,
-                )
-                PROCESSES.append(res)
+def log_time():
+    get_command = "kubectl get pods -o json > results.json"
+    os.system(get_command)
+    get_command = f"python3 get_time.py results.json > {os.path.join(LOG_RESULTS, 'execution_time.txt')}"
+    os.system(get_command)
 
 
 def __taskset_command(cores: str, benchmark_name: str, nr_threads: int, benchmark_suite="parsec") -> list:
