@@ -4,7 +4,7 @@ import time
 import click
 import ruamel.yaml
 
-from scripts.utils import check_output, get_jobs_info, get_node_info, get_pods_info, jobs_ready, start_cluster
+from scripts.utils import Part, check_output, get_jobs_info, get_node_info, get_pods_info, jobs_ready, start_cluster
 
 
 @click.command()
@@ -22,10 +22,7 @@ def task2b(start: bool):
 
 def setup(start: bool) -> None:
     if start:
-        start_cluster(
-            "part2b.yaml",
-            cluster_name="part2b.k8s.local",
-        )
+        start_cluster(part=Part.PART2B)
 
         # Assign the correct label to parsec node
         for line in get_node_info():

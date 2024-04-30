@@ -5,6 +5,7 @@ import time
 import os
 
 from scripts.utils import (
+    Part,
     start_cluster,
     run_command,
     pods_ready,
@@ -126,10 +127,7 @@ def setup(start: bool) -> None:
     """Sets up the environment for task 1. This includes starting the cluster, launching memcached and installing memcached on the nodes client-agent and client-measure."""
 
     if start:
-        start_cluster(
-            "part1.yaml",
-            cluster_name="part1.k8s.local",
-        )
+        start_cluster(part=Part.PART1)
     else:
         print("Skipped starting the cluster")
 

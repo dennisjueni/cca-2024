@@ -3,6 +3,7 @@ import subprocess
 import sys
 from typing import Optional
 from loguru import logger
+from enum import Enum
 
 #### SETUP ENVIRONMENT VARIABLES ########
 
@@ -26,10 +27,9 @@ if os.name != "nt":
 def run_command(command: list[str], env: dict[str, str] = env) -> subprocess.CompletedProcess[bytes]:
     res = subprocess.run(command, env=env, capture_output=True)
     if res.returncode != 0:
-        print("\033[91m!!! ERROR OCCURED !!!\033[0m")  # Print in red
-        print(res.stderr.decode("utf-8"))
+        logger.error(res.stderr.decode("utf-8"))
 
-    print(res.stdout.decode("utf-8"))
+    logger.success(res.stdout.decode("utf-8"))
     return res
 
 
@@ -78,18 +78,30 @@ def ssh_command(
     )
 
 
-def start_cluster(yaml_file: str, cluster_name: str, env=env) -> None:
-    """
-    yaml_file: str - path to the yaml file that describes the cluster, e.g. "part3.yaml"
-    cluster_name: str - name of the cluster, e.g. "cca-eth-2024-group-076-djueni.k8s.local"
-    """
-    print("########### Starting cluster ###########")
+class Part(Enum):
+    PART1 = "part1"
+    PART2A = "part2a"
+    PART2B = "part2b"
+    PART3 = "part3"
+    PART4 = "part4"
 
-    # We create a copy of the current environment variables to make sure we don't modify the original
+    @property
+    def yaml_file(self) -> str:
+        return f"{self.value}.yaml"
 
-    with open(yaml_file, "r") as f:
-        yaml = f.read()
-        assert cluster_name in yaml, f"Cluster name {cluster_name} not found in yaml file"
+    @property
+    def cluster_name(self) -> str:
+        return f"{self.value}.k8s.local"
+
+
+def start_cluster(part: Part) -> None:
+    """
+    Start a kubernetes cluster using kops
+    """
+    logger.info(f"########### Starting cluster for {part} ###########")
+
+    yaml_file = part.yaml_file
+    cluster_name = part.cluster_name
 
     create_bucket_command = ["gsutil", "mb", KOPS_STATE_STORE]
     run_command(create_bucket_command, env)
@@ -117,15 +129,12 @@ def start_cluster(yaml_file: str, cluster_name: str, env=env) -> None:
     validate_command = ["kops", "validate", "cluster", "--wait", "10m"]
     run_command(validate_command, env)
 
-    logger.info("Cluster is ready.")
+    logger.success("Cluster is ready.")
     view_command = ["kops", "get", "nodes", "-o", "wide"]
     run_command(view_command, env)
-    print(
+    logger.info(
         "In order to ssh into one of the nodes, use:\n'gcloud compute ssh --ssh-key-file ~/.ssh/cloud-computing ubuntu@<MACHINE_NAME> --zone europe-west3-a'"
     )
-
-    print("########### Cluster started ###########")
-    return env
 
 
 def delete_cluster(cluster_name: str) -> None:
@@ -142,7 +151,7 @@ def delete_cluster(cluster_name: str) -> None:
     delete_bucket_command = ["gsutil", "rm", "-r", KOPS_STATE_STORE]
     run_command(delete_bucket_command, environment_dict)
 
-    print("########### Cluster deleted ###########")
+    logger.success("########### Cluster deleted ###########")
 
 
 def get_info(resource_type: str) -> list[list[str]]:

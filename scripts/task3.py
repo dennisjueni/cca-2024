@@ -1,4 +1,3 @@
-import sys
 from time import sleep
 import subprocess
 import click
@@ -10,6 +9,7 @@ import tempfile
 from loguru import logger
 
 from scripts.utils import (
+    Part,
     pods_completed,
     scp_command,
     ssh_command,
@@ -18,8 +18,6 @@ from scripts.utils import (
     pods_ready,
     get_node_info,
     get_pods_info,
-    copy_file_to_node,
-    check_output,
     env,
 )
 
@@ -44,12 +42,10 @@ os.makedirs(LOG_RESULTS, exist_ok=True)
     "--start", "-s", help="Flag indicating if the cluster should be started", is_flag=True, default=False, type=bool
 )
 def task3(start: bool):
-    DEBUG = True
-    NUM_ITERATIONS = 1
     try:
         if start:
             # setup cluster using kops and part3.yaml
-            start_cluster("part3.yaml", "")
+            start_cluster(part=Part.PART3)
         start_memcached(env)
         logger.info("Memcached started")
         start_mcperf(env)
