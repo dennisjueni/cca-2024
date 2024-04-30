@@ -49,8 +49,8 @@ class Job:
     def _create_file(self):
         return modified_yaml_file(
             os.path.join(PARSEC_PATH, f"parsec-{self.job_name}.yaml"),
-            selector=__node_selector(self.node_selector),
-            container_args=__container_args(
+            selector=node_selector(self.node_selector),
+            container_args=container_args(
                 self.cores, self.benchmark, self.nr_threads, benchmark_suite=self.benchmark_suite
             ),
         )
@@ -72,6 +72,10 @@ class Job:
         logger.info(f"Started job {self.job_name}")
         self.file.close()
 
+    def apply(self):
+        # TODO: kubectl currently not working as hoped, find out how kubectl apply works or remove it
+        run_command(f"kubectl apply -f {self.file.name}".split())
+        logger.info(f"applied job {self.job_name}")
 
 NODES = [
     "client-agent-a",
@@ -276,8 +280,20 @@ def start_mcperf() -> None:
 
 
 def schedule_batch_jobs() -> None:
-    # blackscholes,canneal,dedup,ferret,freqmine,radix,vips
+    """ blackscholes,canneal,dedup,ferret,freqmine,radix,vips
+    
+    node a has 2 high performance cores with 2GB of memroy,
+    node b has 4 high performance cores with 32GB of memory, 
+    node c has 8 low performance coreswith 32GB of memory
 
+    learnings: 
+        scheduling memcached on one core of node a fulfills the SLO
+        radix runs out of memory on the small memory node, so schedule it on node b or c
+        schedule canneal on a high performance node, as it has bad parallelism and needs a lot of CPU time
+        schedule dedup on the second core with memcached, as it also has bad parallelism and does not run out of memory on the small node
+    """
+
+    #run 14-34
     # schedule_single_job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)  # fourth
     # schedule_single_job("canneal", "canneal", "node-b-4core", "2,3", 2)  # fifth
     # schedule_single_job("radix", "radix", "node-c-8core", "6,7", 2, benchmark_suite="splash2x")  # first
@@ -287,14 +303,45 @@ def schedule_batch_jobs() -> None:
     # schedule_single_job("vips", "vips", "node-c-8core", "0,1", 2)  # third
 
     # TODO : Please Check if depends_on makes sense and works :-)
-    ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2,3", 4)
-    radix_job = Job("radix", "radix", "node-b-4core", "2,3", 2, benchmark_suite="splash2x")
-    vips_job = Job("vips", "vips", "node-b-4core", "2,3", 2, depends_on=[radix_job])
-    freqmine_job = Job("freqmine", "freqmine", "node-b-4core", "0,1,2,3", 8)
+    #run 17-55
+    # ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2,3", 4)
+    # radix_job = Job("radix", "radix", "node-b-4core", "2,3", 2, benchmark_suite="splash2x")
+    # vips_job = Job("vips", "vips", "node-b-4core", "2,3", 2, depends_on=[radix_job])
+    # freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,5", 8)
+    # blackscholes_job = Job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)
+    # canneal_job = Job("canneal", "canneal", "node-c-8core", "6,7", 2)
+    # dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
+    # jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
+
+    # run 18-17
+    # ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2", 3)
+    # canneal_job = Job("canneal", "canneal", "node-b-4core", "2,3", 2)
+
+    # radix_job = Job("radix", "radix", "node-c-8core", "6,7", 2, benchmark_suite="splash2x")
+    # vips_job = Job("vips", "vips", "node-c-8core", "6,7", 2, depends_on=[radix_job])
+    # freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,5,6,7", 8)
+    # blackscholes_job = Job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)
+    
+    # dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
+    # jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
+
+    ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2", 3)
+    canneal_job = Job("canneal", "canneal", "node-b-4core", "2,3", 2)
+
+    freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,5,6,7", 8)
     blackscholes_job = Job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)
-    canneal_job = Job("canneal", "canneal", "node-c-8core", "6,7", 2)
+    radix_job = Job("radix", "radix", "node-c-8core", "6,7", 2, benchmark_suite="splash2x")
+    vips_job = Job("vips", "vips", "node-c-8core", "6,7", 2, depends_on=[radix_job])
+    
     dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
-    jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
+
+    # start in this order, the longer jobs starting first
+    jobs = [ferret_job, freqmine_job, canneal_job, blackscholes_job, dedup_job, radix_job, vips_job]
+
+    # maybe use apply in the future
+    # for job in jobs:
+    #     job.apply()
+    # sleep(5)
 
     while True:
         unstarted_jobs = [job for job in jobs if not job.started]
@@ -377,13 +424,13 @@ def __taskset_command(cores: str, benchmark_name: str, nr_threads: int, benchmar
     ]
 
 
-def __container_args(cores: str, benchmark: str, nr_threads: int, benchmark_suite="parsec") -> tuple:
+def container_args(cores: str, benchmark: str, nr_threads: int, benchmark_suite="parsec") -> tuple:
     return ["spec", "template", "spec", "containers", 0, "args"], __taskset_command(
         cores, benchmark, nr_threads, benchmark_suite=benchmark_suite
     )
 
 
-def __node_selector(selector_value: str) -> tuple:
+def node_selector(selector_value: str) -> tuple:
     return ["spec", "template", "spec", "nodeSelector", "cca-project-nodetype"], selector_value
 
 

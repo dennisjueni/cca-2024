@@ -1,0 +1,4 @@
+mcperf.cc(757): sync_agent[M]: out of sync [1] for agent 2 expected sync got 
+mcperf.cc(780): sync_agent[M]: out of sync [2] for agent 2 expected ack got 
+mcperf.cc(1619): ERROR during synchronization! mcperf.cc:1619
+Connection to 34.107.95.152 closed by remote host.
