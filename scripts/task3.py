@@ -1,3 +1,4 @@
+from math import log
 import sys
 import subprocess
 import click
@@ -53,13 +54,15 @@ def task3(start: bool):
 
         install_mcperf()
 
-        start_mcperf()
+        log_file, error_file = start_mcperf()
 
         schedule_batch_jobs()
 
         # wait for jobs to finish
         while not pods_completed():
             sleep(5)
+            log_file.flush()
+            error_file.flush()
 
         log_time()
 
@@ -67,8 +70,17 @@ def task3(start: bool):
         logger.error(e)
     finally:
         # cleanup
+        log_file.flush()
+        error_file.flush()
+        sleep(5)
         for process in PROCESSES:
             process.kill()
+        sleep(5)
+        log_file.close()
+        error_file.close()
+        # cleanup
+
+        # log_pods()
 
         delete_pods()
 
@@ -117,19 +129,6 @@ def install_mcperf() -> None:
         if line[0].startswith("client-agent-") or line[0].startswith("client-measure-"):
 
             # First we check if we have already copied the file to the node, if so, we do not do it again
-            check_command = [
-                "gcloud",
-                "compute",
-                "ssh",
-                f"ubuntu@{line[0]}",
-                "--zone",
-                "europe-west3-a",
-                "--ssh-key-file",
-                os.path.expanduser("~/.ssh/cloud-computing"),
-                "--command",
-                f"test -f {destination_path} && echo 'already installed' || echo '-'",
-            ]
-
             check_command = f"test -f {destination_path} && echo 'already installed' || echo '-'"
             res = ssh_command(
                 line[0],
@@ -205,22 +204,28 @@ def start_mcperf() -> None:
     )
     PROCESSES.append(res)
 
+    time.sleep(5)
+
     mc_perf_measure_load_command = f"~/memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly"
     res = ssh_command(client_measure_name, mc_perf_measure_load_command, is_async=True)
     PROCESSES.append(res)
 
-    log_file = open(os.path.join(LOG_RESULTS, "mcperf-loadonly.txt"), "w")
-    error_file = open(os.path.join(LOG_RESULTS, "mcperf-loadonly.error"), "w")
-    mc_perf_measure_start_command = f"./memcache-perf/mcperf -s {memcached_ip} -a {client_agent_a_ip} -a {client_agent_b_ip} --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30500:5"
-
+    log_file = open(os.path.join(LOG_RESULTS, "mcperf.txt"), "w")
+    error_file = open(os.path.join(LOG_RESULTS, "mcperf.error"), "w")
+    mc_perf_measure_start_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_a_ip} -a {client_agent_b_ip} --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30500:5"
+    logger.info(f"Executing mcperf on {client_measure_name} - command: `{mc_perf_measure_start_command}`")
     res = ssh_command(
         client_measure_name,
         mc_perf_measure_start_command,
         is_async=True,
-        stdout=log_file.fileno(),
-        stderr=error_file.fileno(),
+        stdout=log_file,
+        stderr=error_file,
     )
     PROCESSES.append(res)
+
+    # time.sleep(10)
+
+    return log_file, error_file
 
 
 def schedule_batch_jobs() -> None:

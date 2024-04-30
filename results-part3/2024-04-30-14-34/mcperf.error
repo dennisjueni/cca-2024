@@ -1,0 +1,293 @@
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480483.073553  options.time = 10
+mcperf.cc(1679): stopped at 1714480483.073756  options.time = 10
+mcperf.cc(1679): stopped at 1714480483.083083  options.time = 10
+mcperf.cc(1679): stopped at 1714480483.088682  options.time = 10
+mcperf.cc(1679): stopped at 1714480483.089021  options.time = 10
+mcperf.cc(1679): stopped at 1714480483.097217  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480494.725749  options.time = 10
+mcperf.cc(1679): stopped at 1714480494.737037  options.time = 10
+mcperf.cc(1679): stopped at 1714480494.737037  options.time = 10
+mcperf.cc(1679): stopped at 1714480494.729016  options.time = 10
+mcperf.cc(1679): stopped at 1714480494.743994  options.time = 10
+mcperf.cc(1679): stopped at 1714480494.748315  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480506.350529  options.time = 10
+mcperf.cc(1679): stopped at 1714480506.350687  options.time = 10
+mcperf.cc(1679): stopped at 1714480506.358603  options.time = 10
+mcperf.cc(1679): stopped at 1714480506.361602  options.time = 10
+mcperf.cc(1679): stopped at 1714480506.363649  options.time = 10
+mcperf.cc(1679): stopped at 1714480506.366795  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480517.970851  options.time = 10
+mcperf.cc(1679): stopped at 1714480517.977025  options.time = 10
+mcperf.cc(1679): stopped at 1714480517.980735  options.time = 10
+mcperf.cc(1679): stopped at 1714480517.985030  options.time = 10
+mcperf.cc(1679): stopped at 1714480517.987658  options.time = 10
+mcperf.cc(1679): stopped at 1714480517.992817  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480529.601009  options.time = 10
+mcperf.cc(1679): stopped at 1714480529.601035  options.time = 10
+mcperf.cc(1679): stopped at 1714480529.605052  options.time = 10
+mcperf.cc(1679): stopped at 1714480529.605204  options.time = 10
+mcperf.cc(1679): stopped at 1714480529.610666  options.time = 10
+mcperf.cc(1679): stopped at 1714480529.611157  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480541.213515  options.time = 10
+mcperf.cc(1679): stopped at 1714480541.217062  options.time = 10
+mcperf.cc(1679): stopped at 1714480541.225033  options.time = 10
+mcperf.cc(1679): stopped at 1714480541.231956  options.time = 10
+mcperf.cc(1679): stopped at 1714480541.233036  options.time = 10
+mcperf.cc(1679): stopped at 1714480541.237863  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480552.838683  options.time = 10
+mcperf.cc(1679): stopped at 1714480552.838849  options.time = 10
+mcperf.cc(1679): stopped at 1714480552.845123  options.time = 10
+mcperf.cc(1679): stopped at 1714480552.846224  options.time = 10
+mcperf.cc(1679): stopped at 1714480552.849058  options.time = 10
+mcperf.cc(1679): stopped at 1714480552.854662  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480564.457053  options.time = 10
+mcperf.cc(1679): stopped at 1714480564.472006  options.time = 10
+mcperf.cc(1679): stopped at 1714480564.472012  options.time = 10
+mcperf.cc(1679): stopped at 1714480564.477047  options.time = 10
+mcperf.cc(1679): stopped at 1714480564.477257  options.time = 10
+mcperf.cc(1679): stopped at 1714480564.482067  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480576.089014  options.time = 10
+mcperf.cc(1679): stopped at 1714480576.092563  options.time = 10
+mcperf.cc(1679): stopped at 1714480576.092696  options.time = 10
+mcperf.cc(1679): stopped at 1714480576.097781  options.time = 10
+mcperf.cc(1679): stopped at 1714480576.100275  options.time = 10
+mcperf.cc(1679): stopped at 1714480576.102960  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480587.703448  options.time = 10
+mcperf.cc(1679): stopped at 1714480587.705278  options.time = 10
+mcperf.cc(1679): stopped at 1714480587.705329  options.time = 10
+mcperf.cc(1679): stopped at 1714480587.709072  options.time = 10
+mcperf.cc(1679): stopped at 1714480587.721032  options.time = 10
+mcperf.cc(1679): stopped at 1714480587.710108  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480599.332190  options.time = 10
+mcperf.cc(1679): stopped at 1714480599.332401  options.time = 10
+mcperf.cc(1679): stopped at 1714480599.337026  options.time = 10
+mcperf.cc(1679): stopped at 1714480599.349037  options.time = 10
+mcperf.cc(1679): stopped at 1714480599.353016  options.time = 10
+mcperf.cc(1679): stopped at 1714480599.355689  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480610.958017  options.time = 10
+mcperf.cc(1679): stopped at 1714480610.965004  options.time = 10
+mcperf.cc(1679): stopped at 1714480610.961017  options.time = 10
+mcperf.cc(1679): stopped at 1714480610.969036  options.time = 10
+mcperf.cc(1679): stopped at 1714480610.977403  options.time = 10
+mcperf.cc(1679): stopped at 1714480610.977623  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480622.580745  options.time = 10
+mcperf.cc(1679): stopped at 1714480622.581029  options.time = 10
+mcperf.cc(1679): stopped at 1714480622.585021  options.time = 10
+mcperf.cc(1679): stopped at 1714480622.586137  options.time = 10
+mcperf.cc(1679): stopped at 1714480622.592706  options.time = 10
+mcperf.cc(1679): stopped at 1714480622.599780  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480634.205009  options.time = 10
+mcperf.cc(1679): stopped at 1714480634.209050  options.time = 10
+mcperf.cc(1679): stopped at 1714480634.211452  options.time = 10
+mcperf.cc(1679): stopped at 1714480634.214309  options.time = 10
+mcperf.cc(1679): stopped at 1714480634.214544  options.time = 10
+mcperf.cc(1679): stopped at 1714480634.217051  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480645.819930  options.time = 10
+mcperf.cc(1679): stopped at 1714480645.821039  options.time = 10
+mcperf.cc(1679): stopped at 1714480645.825012  options.time = 10
+mcperf.cc(1679): stopped at 1714480645.825051  options.time = 10
+mcperf.cc(1679): stopped at 1714480645.837047  options.time = 10
+mcperf.cc(1679): stopped at 1714480645.845023  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480657.449053  options.time = 10
+mcperf.cc(1679): stopped at 1714480657.453032  options.time = 10
+mcperf.cc(1679): stopped at 1714480657.455588  options.time = 10
+mcperf.cc(1679): stopped at 1714480657.457288  options.time = 10
+mcperf.cc(1679): stopped at 1714480657.458476  options.time = 10
+mcperf.cc(1679): stopped at 1714480657.463573  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480669.067431  options.time = 10
+mcperf.cc(1679): stopped at 1714480669.069012  options.time = 10
+mcperf.cc(1679): stopped at 1714480669.073033  options.time = 10
+mcperf.cc(1679): stopped at 1714480669.073055  options.time = 10
+mcperf.cc(1679): stopped at 1714480669.081220  options.time = 10
+mcperf.cc(1679): stopped at 1714480669.086310  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
+mcperf.cc(1236): Agent prep done.
+mcperf.cc(1611): Synchronizing.
+mcperf.cc(740): agent: synchronizing
+mcperf.cc(809): agent: synchronized with 0 errors
+mcperf.cc(1618): Synchronized.
+mcperf.cc(1679): stopped at 1714480680.693074  options.time = 10
+mcperf.cc(1679): stopped at 1714480680.697101  options.time = 10
+mcperf.cc(1679): stopped at 1714480680.705067  options.time = 10
+mcperf.cc(1679): stopped at 1714480680.709029  options.time = 10
+mcperf.cc(1679): stopped at 1714480680.713948  options.time = 10
+mcperf.cc(1679): stopped at 1714480680.714563  options.time = 10
+mcperf.cc(1234): agent given
+mcperf.cc(310): Agent 1 prep 
+mcperf.cc(310): Agent 2 prep 
+mcperf.cc(424): lambda_denom = 24
+mcperf.cc(457): MASTER SLEEPS
