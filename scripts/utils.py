@@ -195,15 +195,16 @@ def pods_ready() -> bool:
     return True
 
 
-def pods_completed() -> bool:
+def pods_completed(job_name=None) -> bool:
     info = get_pods_info()
     if len(info) == 0:
         return False
-
+    if job_name is not None:
+        info = [pod for pod in info if job_name in pod[0]]
     for pod in info:
         if "memcached" in pod[0]:
             continue
-        if not (pod[2] == "Completed" or pod[2] == "Error"):  # Error is also a final state
+        if pod[2] != "Completed" and pod[2] != "Error":
             return False
     return True
 

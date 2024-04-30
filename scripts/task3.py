@@ -1,4 +1,3 @@
-from math import log
 import sys
 import subprocess
 import click
@@ -23,6 +22,56 @@ from scripts.utils import (
     get_node_info,
     get_pods_info,
 )
+
+
+class Job:
+    def __init__(
+        self,
+        job_name: str,
+        benchmark: str,
+        node_selector: str,
+        cores: str,
+        nr_threads: int,
+        benchmark_suite="parsec",
+        depends_on=[],
+    ):
+        self.job_name = job_name
+        self.benchmark = benchmark
+        self.node_selector = node_selector
+        self.cores = cores
+        self.nr_threads = nr_threads
+        self.benchmark_suite = benchmark_suite
+        self.depends_on = depends_on
+        self.file = self._create_file()
+        self.is_finished_prop = False
+        self.started = False
+
+    def _create_file(self):
+        return modified_yaml_file(
+            os.path.join(PARSEC_PATH, f"parsec-{self.job_name}.yaml"),
+            selector=__node_selector(self.node_selector),
+            container_args=__container_args(
+                self.cores, self.benchmark, self.nr_threads, benchmark_suite=self.benchmark_suite
+            ),
+        )
+
+    @property
+    def is_finished(self):
+        self.is_finished_prop = self.is_finished_prop or pods_completed(self.job_name)
+        return self.is_finished_prop
+
+    def start(self):
+        if self.started:
+            return
+        for job in self.depends_on:
+            if not job.is_finished:
+                logger.info(f"{self.job_name} is waiting for {job.job_name} to finish. Try again later.")
+                return
+        run_command(f"kubectl create -f {self.file.name}".split())
+        self.started = True
+        logger.info(f"Started job {self.job_name}")
+        self.file.close()
+
 
 NODES = [
     "client-agent-a",
@@ -70,14 +119,14 @@ def task3(start: bool):
         logger.error(e)
     finally:
         # cleanup
-        log_file.flush()
-        error_file.flush()
-        sleep(5)
+        # log_file.flush()
+        # error_file.flush()
+        # sleep(5)
         for process in PROCESSES:
             process.kill()
-        sleep(5)
-        log_file.close()
-        error_file.close()
+        # sleep(5)
+        # log_file.close()
+        # error_file.close()
         # cleanup
 
         # log_pods()
@@ -223,33 +272,37 @@ def start_mcperf() -> None:
     )
     PROCESSES.append(res)
 
-    # time.sleep(10)
-
     return log_file, error_file
 
 
 def schedule_batch_jobs() -> None:
     # blackscholes,canneal,dedup,ferret,freqmine,radix,vips
-    schedule_single_job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)  # fourth
-    schedule_single_job("canneal", "canneal", "node-b-4core", "2,3", 2)  # fifth
-    schedule_single_job("radix", "radix", "node-c-8core", "6,7", 2, benchmark_suite="splash2x")  # first
-    schedule_single_job("ferret", "ferret", "node-b-4core", "0,1,2", 3)  # seventh (almost 6th)
-    schedule_single_job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,6,7", 6)  # sixth
-    schedule_single_job("dedup", "dedup", "node-a-2core", "1", 1)  # second
-    schedule_single_job("vips", "vips", "node-c-8core", "0,1", 2)  # third
 
+    # schedule_single_job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)  # fourth
+    # schedule_single_job("canneal", "canneal", "node-b-4core", "2,3", 2)  # fifth
+    # schedule_single_job("radix", "radix", "node-c-8core", "6,7", 2, benchmark_suite="splash2x")  # first
+    # schedule_single_job("ferret", "ferret", "node-b-4core", "0,1,2", 3)  # seventh (almost 6th)
+    # schedule_single_job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,6,7", 6)  # sixth
+    # schedule_single_job("dedup", "dedup", "node-a-2core", "1", 1)  # second
+    # schedule_single_job("vips", "vips", "node-c-8core", "0,1", 2)  # third
 
-def schedule_single_job(
-    job_name: str, benchmark: str, node_selector: str, cores: str, nr_threads: int, benchmark_suite="parsec"
-) -> None:
-    # Start a single job using `kubectl create -f batch-job.yaml`
-    file = modified_yaml_file(
-        os.path.join(PARSEC_PATH, f"parsec-{job_name}.yaml"),
-        selector=__node_selector(node_selector),
-        container_args=__container_args(cores, benchmark, nr_threads, benchmark_suite),
-    )
-    run_command(f"kubectl create -f {file.name}".split())
-    file.close()
+    # TODO : Please Check if depends_on makes sense and works :-)
+    ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2,3", 4)
+    radix_job = Job("radix", "radix", "node-b-4core", "2,3", 2, benchmark_suite="splash2x")
+    vips_job = Job("vips", "vips", "node-b-4core", "2,3", 2, depends_on=[radix_job])
+    freqmine_job = Job("freqmine", "freqmine", "node-b-4core", "0,1,2,3", 8)
+    blackscholes_job = Job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)
+    canneal_job = Job("canneal", "canneal", "node-c-8core", "6,7", 2)
+    dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
+    jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
+
+    while True:
+        unstarted_jobs = [job for job in jobs if not job.started]
+        if len(unstarted_jobs) == 0:
+            break
+        for job in unstarted_jobs:
+            job.start()
+        sleep(2)
 
 
 def get_node_ip(node_name: str) -> Optional[str]:
