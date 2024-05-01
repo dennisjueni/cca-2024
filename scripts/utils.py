@@ -44,8 +44,7 @@ def ssh_command(
     command: str,
     env: dict[str, str] = env,
     is_async: bool = False,
-    stdout: int = subprocess.PIPE,
-    stderr: int = subprocess.PIPE,
+    file=None
 ) -> subprocess.CompletedProcess[bytes] | subprocess.Popen[bytes]:
     ssh_command = [
         "gcloud",
@@ -62,7 +61,7 @@ def ssh_command(
     logger.info(f"\n({"Asynchronous" if is_async else "Synchronous"}) SSH Command on node {node}: {command}")
 
     if is_async:
-        return subprocess.Popen(ssh_command, env=env, stdout=stdout, stderr=stderr)
+        return subprocess.Popen(ssh_command, env=env, stdout=file, stderr=subprocess.STDOUT)
     else:
         return run_command(ssh_command, env, log_success=False)
 

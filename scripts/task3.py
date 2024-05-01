@@ -1,11 +1,9 @@
-from io import TextIOWrapper
 import sys
 import click
 import time
 import os
 
 from time import sleep
-from typing import Tuple
 from loguru import logger
 
 from scripts.job import Job
@@ -25,15 +23,6 @@ from scripts.utils import (
 )
 
 
-NODES = [
-    "client-agent-a",
-    "client-agent-b",
-    "client-measure",
-    "master-europe-west3-a",
-    "node-a-2core",
-    "node-b-4core",
-    "node-c-8core",
-]
 PROCESSES = []
 LOG_RESULTS = os.path.join(".", "results-part3", time.strftime("%Y-%m-%d-%H-%M"))
 os.makedirs(LOG_RESULTS, exist_ok=True)
@@ -46,22 +35,19 @@ os.makedirs(LOG_RESULTS, exist_ok=True)
 def task3(start: bool):
     try:
         if start:
-            # setup cluster using kops and part3.yaml
             start_cluster(part=Part.PART3)
 
         start_memcached()
 
         install_mcperf()
 
-        log_file, error_file = start_mcperf()
+        start_mcperf()
 
         schedule_batch_jobs()
 
-        # wait for jobs to finish
+        # wait for all PARSEC benchmarks to finish
         while not pods_completed():
             sleep(5)
-            log_file.flush()
-            error_file.flush()
 
         log_time()
 
@@ -143,7 +129,7 @@ def install_mcperf() -> None:
     logger.success("########### Finished Installing mcperf on all 3 machines ###########")
 
 
-def start_mcperf() -> Tuple[TextIOWrapper, TextIOWrapper]:
+def start_mcperf() -> None:
     logger.info("########### Starting Memcached on all 3 machines ###########")
     global PROCESSES
 
@@ -178,42 +164,25 @@ def start_mcperf() -> Tuple[TextIOWrapper, TextIOWrapper]:
         print("Could not find client-agent-a, client-agent-b, client-measure, or memcached node")
         sys.exit(1)
 
+    f_a = open(os.path.join(LOG_RESULTS, "mcperf_a.txt"), "w")
+    f_b = open(os.path.join(LOG_RESULTS, "mcperf_b.txt"), "w")
+
     mcperf_agent_a_command = "./memcache-perf-dynamic/mcperf -T 2 -A"
-    res = ssh_command(
-        client_agent_a_name,
-        mcperf_agent_a_command,
-        is_async=True,
-    )
+    res = ssh_command(client_agent_a_name, mcperf_agent_a_command, is_async=True, file=f_a)
     PROCESSES.append(res)
 
     mcperf_agent_b_command = "./memcache-perf-dynamic/mcperf -T 4 -A"
-    res = ssh_command(
-        client_agent_b_name,
-        mcperf_agent_b_command,
-        is_async=True,
-    )
+    res = ssh_command(client_agent_b_name, mcperf_agent_b_command, is_async=True, file=f_b)
     PROCESSES.append(res)
 
     time.sleep(5)
 
-    mc_perf_measure_load_command = f"~/memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly"
-    res = ssh_command(client_measure_name, mc_perf_measure_load_command, is_async=True)
-    PROCESSES.append(res)
-
     log_file = open(os.path.join(LOG_RESULTS, "mcperf.txt"), "w")
-    error_file = open(os.path.join(LOG_RESULTS, "mcperf.error"), "w")
-    mc_perf_measure_start_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_a_ip} -a {client_agent_b_ip} --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30500:5"
-    logger.info(f"Executing mcperf on {client_measure_name} - command: `{mc_perf_measure_start_command}`")
-    res = ssh_command(
-        client_measure_name,
-        mc_perf_measure_start_command,
-        is_async=True,
-        stdout=log_file.fileno(),
-        stderr=error_file.fileno(),
-    )
-    PROCESSES.append(res)
 
-    return log_file, error_file
+    mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_a_ip} -a {client_agent_b_ip} --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30500:5"
+
+    res = ssh_command(client_measure_name, mc_perf_measure_command, is_async=True, file=log_file)
+    PROCESSES.append(res)
 
 
 def schedule_batch_jobs() -> None:
@@ -262,23 +231,15 @@ def schedule_batch_jobs() -> None:
     # dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
     # jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
 
-    ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2", 3)
-    canneal_job = Job("canneal", "canneal", "node-b-4core", "2,3", 2)
-
-    freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,5,6,7", 8)
+    ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2,3", 4)
+    radix_job = Job("radix", "radix", "node-b-4core", "2,3", 2, benchmark_suite="splash2x")
+    vips_job = Job("vips", "vips", "node-b-4core", "2,3", 2, depends_on=[radix_job])
+    freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,5", 8)
     blackscholes_job = Job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)
-    radix_job = Job("radix", "radix", "node-c-8core", "6,7", 2, benchmark_suite="splash2x")
-    vips_job = Job("vips", "vips", "node-c-8core", "6,7", 2, depends_on=[radix_job])
-
+    canneal_job = Job("canneal", "canneal", "node-c-8core", "6,7", 2)
     dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
 
-    # start in this order, the longer jobs starting first
-    jobs = [ferret_job, freqmine_job, canneal_job, blackscholes_job, dedup_job, radix_job, vips_job]
-
-    # maybe use apply in the future
-    # for job in jobs:
-    #     job.apply()
-    # sleep(5)
+    jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
 
     while True:
         unstarted_jobs = [job for job in jobs if not job.started]
@@ -286,7 +247,7 @@ def schedule_batch_jobs() -> None:
             break
         for job in unstarted_jobs:
             job.start()
-        sleep(2)
+        sleep(1)
 
 
 def is_memcached_ready() -> bool:
