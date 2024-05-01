@@ -54,7 +54,7 @@ def task3(start: bool):
         log_time()
 
         curr_time = time.time()
-        while curr_time - start_time < 60 * 4:
+        while curr_time - start_time < 60 * 5:
             sleep(5)
             curr_time = time.time()
     
