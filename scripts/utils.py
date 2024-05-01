@@ -26,12 +26,15 @@ if os.name != "nt":
 #### END SETUP ENVIRONMENT VARIABLES ####
 
 
-def run_command(command: list[str], env: dict[str, str] = env) -> subprocess.CompletedProcess[bytes]:
+def run_command(command: list[str], env: dict[str, str] = env, log_success: bool = True) -> subprocess.CompletedProcess[bytes]:
     res = subprocess.run(command, env=env, capture_output=True)
     if res.returncode != 0:
-        logger.error(res.stderr.decode("utf-8"))
+        logger.error(f"\nCommand: {" ".join(command)}\nOutput: {res.stderr.decode("utf-8")}")
+        return res
 
-    logger.success(res.stdout.decode("utf-8"))
+    if log_success:
+        logger.success(f"\nCommand: {" ".join(command)}")
+        logger.debug(f"Output: {res.stdout.decode("utf-8")}")
     return res
 
 
@@ -55,12 +58,12 @@ def ssh_command(
         "--command",
         command,
     ]
-    logger.info(f"Running command: {ssh_command} on node {node} is_async: {is_async}")
-    return (
-        run_command(ssh_command, env)
-        if not is_async
-        else subprocess.Popen(ssh_command, env=env, stdout=stdout, stderr=stderr)
-    )
+    logger.info(f"\n({"Asynchronous" if is_async else "Synchronous"}) SSH Command on node {node}: {" ".join(command)}")
+
+    if is_async:
+        return subprocess.Popen(ssh_command, env=env, stdout=stdout, stderr=stderr)
+    else:
+        return run_command(ssh_command, env, log_success=False)
 
 
 class Part(Enum):
@@ -115,7 +118,7 @@ def start_cluster(part: Part) -> None:
     run_command(validate_command, env)
 
     logger.success("Cluster is ready.")
-    view_command = ["kops", "get", "nodes", "-o", "wide"]
+    view_command = ["kubectl", "get", "nodes", "-o", "wide"]
     run_command(view_command, env)
     logger.info(
         "In order to ssh into one of the nodes, use:\n'gcloud compute ssh --ssh-key-file ~/.ssh/cloud-computing ubuntu@<MACHINE_NAME> --zone europe-west3-a'"

@@ -21,6 +21,3 @@ def delete_pods() -> None:
     run_command(["kubectl", "delete", "services", "--all"])
     logger.success("########### Pods, Jobs & Services deleted ###########")
 
-
-if __name__ == "__main__":
-    delete_cluster_cli()
