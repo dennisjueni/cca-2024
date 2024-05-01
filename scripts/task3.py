@@ -4,13 +4,12 @@ import subprocess
 import click
 import time
 import os
-import yaml
-import tempfile
+
 from time import sleep
 from typing import Optional, Tuple
-
 from loguru import logger
 
+from job import Job
 from scripts.delete import delete_pods
 from scripts.utils import (
     Part,
@@ -22,61 +21,10 @@ from scripts.utils import (
     pods_ready,
     get_node_info,
     get_pods_info,
+    get_node_ip,
+    get_pod_ip,
 )
 
-
-class Job:
-    def __init__(
-        self,
-        job_name: str,
-        benchmark: str,
-        node_selector: str,
-        cores: str,
-        nr_threads: int,
-        benchmark_suite="parsec",
-        depends_on=[],
-    ):
-        self.job_name = job_name
-        self.benchmark = benchmark
-        self.node_selector = node_selector
-        self.cores = cores
-        self.nr_threads = nr_threads
-        self.benchmark_suite = benchmark_suite
-        self.depends_on = depends_on
-        self.file = self._create_file()
-        self.is_finished_prop = False
-        self.started = False
-
-    def _create_file(self):
-        return modified_yaml_file(
-            os.path.join(PARSEC_PATH, f"parsec-{self.job_name}.yaml"),
-            selector=node_selector(self.node_selector),
-            container_args=container_args(
-                self.cores, self.benchmark, self.nr_threads, benchmark_suite=self.benchmark_suite
-            ),
-        )
-
-    @property
-    def is_finished(self):
-        self.is_finished_prop = self.is_finished_prop or pods_completed(self.job_name)
-        return self.is_finished_prop
-
-    def start(self):
-        if self.started:
-            return
-        for job in self.depends_on:
-            if not job.is_finished:
-                logger.info(f"{self.job_name} is waiting for {job.job_name} to finish. Try again later.")
-                return
-        run_command(f"kubectl create -f {self.file.name}".split())
-        self.started = True
-        logger.info(f"Started job {self.job_name}")
-        self.file.close()
-
-    def apply(self):
-        # TODO: kubectl currently not working as hoped, find out how kubectl apply works or remove it
-        run_command(f"kubectl apply -f {self.file.name}".split())
-        logger.info(f"applied job {self.job_name}")
 
 NODES = [
     "client-agent-a",
@@ -87,9 +35,7 @@ NODES = [
     "node-b-4core",
     "node-c-8core",
 ]
-
 PROCESSES = []
-
 LOG_RESULTS = os.path.join(".", "results-part3", time.strftime("%Y-%m-%d-%H-%M"))
 os.makedirs(LOG_RESULTS, exist_ok=True)
 
@@ -186,7 +132,7 @@ def install_mcperf() -> None:
                 continue
 
             copy_file_to_node(line[0], source_path=source_path, destination_path=destination_path)
-            logger.info(f"Copyied the mcperf install script to {line[0]}")
+            logger.info(f"Copied the mcperf install script to {line[0]}")
 
             install_command = f"chmod +x {destination_path} && {destination_path}"
             ssh_command(
@@ -272,20 +218,20 @@ def start_mcperf() -> Tuple[TextIOWrapper, TextIOWrapper]:
 
 
 def schedule_batch_jobs() -> None:
-    """ blackscholes,canneal,dedup,ferret,freqmine,radix,vips
-    
-    node a has 2 high performance cores with 2GB of memroy,
-    node b has 4 high performance cores with 32GB of memory, 
-    node c has 8 low performance coreswith 32GB of memory
+    """blackscholes,canneal,dedup,ferret,freqmine,radix,vips
 
-    learnings: 
+    node a has 2 high performance cores with 2GB of memroy,
+    node b has 4 high performance cores with 32GB of memory,
+    node c has 8 low performance cores with 32GB of memory
+
+    learnings:
         scheduling memcached on one core of node a fulfills the SLO
         radix runs out of memory on the small memory node, so schedule it on node b or c
         schedule canneal on a high performance node, as it has bad parallelism and needs a lot of CPU time
         schedule dedup on the second core with memcached, as it also has bad parallelism and does not run out of memory on the small node
     """
 
-    #run 14-34
+    # run 14-34
     # schedule_single_job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)  # fourth
     # schedule_single_job("canneal", "canneal", "node-b-4core", "2,3", 2)  # fifth
     # schedule_single_job("radix", "radix", "node-c-8core", "6,7", 2, benchmark_suite="splash2x")  # first
@@ -295,7 +241,7 @@ def schedule_batch_jobs() -> None:
     # schedule_single_job("vips", "vips", "node-c-8core", "0,1", 2)  # third
 
     # TODO : Please Check if depends_on makes sense and works :-)
-    #run 17-55
+    # run 17-55
     # ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2,3", 4)
     # radix_job = Job("radix", "radix", "node-b-4core", "2,3", 2, benchmark_suite="splash2x")
     # vips_job = Job("vips", "vips", "node-b-4core", "2,3", 2, depends_on=[radix_job])
@@ -313,7 +259,7 @@ def schedule_batch_jobs() -> None:
     # vips_job = Job("vips", "vips", "node-c-8core", "6,7", 2, depends_on=[radix_job])
     # freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,5,6,7", 8)
     # blackscholes_job = Job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)
-    
+
     # dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
     # jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
 
@@ -324,7 +270,7 @@ def schedule_batch_jobs() -> None:
     blackscholes_job = Job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)
     radix_job = Job("radix", "radix", "node-c-8core", "6,7", 2, benchmark_suite="splash2x")
     vips_job = Job("vips", "vips", "node-c-8core", "6,7", 2, depends_on=[radix_job])
-    
+
     dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
 
     # start in this order, the longer jobs starting first
@@ -344,61 +290,8 @@ def schedule_batch_jobs() -> None:
         sleep(2)
 
 
-def get_node_ip(node_name: str) -> Optional[str]:
-    info = get_node_info()
-    for line in info:
-        print(line)
-        if line[0].startswith(node_name):
-            return line[5]
-    return None
-
-
-def get_pod_ip(pod_name: str) -> Optional[str]:
-    info = get_pods_info()
-    for line in info:
-        if "memcached" in line[0]:
-            return line[5]
-
-    return None
-
-
 def is_memcached_ready() -> bool:
     return pods_ready()
-
-
-def log_pods() -> None:
-    for info in get_pods_info():
-        name = info[0]
-        res = subprocess.run(["kubectl", "logs", name], capture_output=True)
-        info = res.stdout.decode("utf-8")
-        logger.info(f"Logs for pod {name}\n\n####LOGS#### {str(info)}\n####END LOGS####\n\n")
-        error = res.stderr.decode("utf-8")
-        if error:
-            logger.error(f"Error for pod {name}\n\n####ERROR#### {str(error)}\n####END ERROR####\n\n")
-
-
-def modified_yaml_file(file_path, **kwargs):
-    """
-    Usage example:
-        modify_yaml_file("file.yaml", lambda file: run_command(f"cat {file.name}"), value1=([key1, subkey2], "modified_value"))
-    """
-    with open(file_path, "r") as f:
-        data = yaml.safe_load(f)
-
-    # Traverse the attribute path and update the value
-    for attribute_path, new_value in kwargs.values():
-        current_node = data
-        for key in attribute_path[:-1]:
-            current_node = current_node[key]  # can be a list or a dict
-        if current_node:
-            current_node[attribute_path[-1]] = new_value
-        else:
-            raise ValueError(f"Attribute path '{attribute_path}' not found in YAML")
-
-    # Write modified data to a temporary file
-    temp_file = tempfile.NamedTemporaryFile(mode="w")
-    yaml.dump(data, temp_file, default_flow_style=False)
-    return temp_file
 
 
 def log_time():
@@ -408,34 +301,5 @@ def log_time():
     os.system(get_command)
 
 
-def __taskset_command(cores: str, benchmark_name: str, nr_threads: int, benchmark_suite="parsec") -> list:
-    # args: ["-c", "taskset -c 4,5,6 ./run -a run -S parsec -p canneal -i native -n 3"]
-    return [
-        "-c",
-        f"taskset -c {cores} ./run -a run -S {benchmark_suite} -p {benchmark_name} -i native -n {nr_threads}",
-    ]
-
-
-def container_args(cores: str, benchmark: str, nr_threads: int, benchmark_suite="parsec") -> tuple:
-    return ["spec", "template", "spec", "containers", 0, "args"], __taskset_command(
-        cores, benchmark, nr_threads, benchmark_suite=benchmark_suite
-    )
-
-
-def node_selector(selector_value: str) -> tuple:
-    return ["spec", "template", "spec", "nodeSelector", "cca-project-nodetype"], selector_value
-
-
-####### TESTS #######
-
-PARSEC_PATH = os.path.join(".", "parsec-benchmarks", "part3")
-
 if __name__ == "__main__":
     task3()
-    # file = modified_yaml_file(
-    #     os.path.join(PARSEC_PATH, "parsec-blackscholes.yaml"),
-    #     selector=__node_selector("node-b-4core"),
-    #     container_args=__container_args("4,5,6,7", "blackscholes", 3),
-    # )
-    # subprocess.run(["cat", file.name])
-    # file.close()

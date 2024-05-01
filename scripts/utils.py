@@ -29,12 +29,13 @@ if os.name != "nt":
 def run_command(command: list[str], env: dict[str, str] = env, log_success: bool = True) -> subprocess.CompletedProcess[bytes]:
     res = subprocess.run(command, env=env, capture_output=True)
     if res.returncode != 0:
-        logger.error(f"\nCommand: {" ".join(command)}\nOutput: {res.stderr.decode("utf-8")}")
+        logger.error(f"\nCommand: {" ".join(command)}")
+        print(f"Output: {res.stderr.decode("utf-8")}")
         return res
 
     if log_success:
         logger.success(f"\nCommand: {" ".join(command)}")
-        logger.debug(f"Output: {res.stdout.decode("utf-8")}")
+        print(f"Output: {res.stdout.decode("utf-8")}")
     return res
 
 
@@ -58,7 +59,7 @@ def ssh_command(
         "--command",
         command,
     ]
-    logger.info(f"\n({"Asynchronous" if is_async else "Synchronous"}) SSH Command on node {node}: {" ".join(command)}")
+    logger.info(f"\n({"Asynchronous" if is_async else "Synchronous"}) SSH Command on node {node}: {command}")
 
     if is_async:
         return subprocess.Popen(ssh_command, env=env, stdout=stdout, stderr=stderr)
@@ -246,3 +247,31 @@ def check_output(res: subprocess.CompletedProcess) -> None:
     if res.returncode != 0:
         print(res.stderr.decode("utf-8"))
         sys.exit(1)
+
+
+def log_pods() -> None:
+    for info in get_pods_info():
+        name = info[0]
+        res = subprocess.run(["kubectl", "logs", name], capture_output=True)
+        info = res.stdout.decode("utf-8")
+        logger.info(f"Logs for pod {name}\n\n####LOGS#### {str(info)}\n####END LOGS####\n\n")
+        error = res.stderr.decode("utf-8")
+        if error:
+            logger.error(f"Error for pod {name}\n\n####ERROR#### {str(error)}\n####END ERROR####\n\n")
+
+
+def get_node_ip(node_name: str) -> Optional[str]:
+    info = get_node_info()
+    for line in info:
+        if line[0].startswith(node_name):
+            return line[5]
+    return None
+
+
+def get_pod_ip(pod_name: str) -> Optional[str]:
+    info = get_pods_info()
+    for line in info:
+        if pod_name in line[0]:
+            return line[5]
+
+    return None
