@@ -1,3 +1,4 @@
+from io import TextIOWrapper
 import sys
 import subprocess
 import click
@@ -6,7 +7,7 @@ import os
 import yaml
 import tempfile
 from time import sleep
-from typing import Optional
+from typing import Optional, Tuple
 
 from loguru import logger
 
@@ -123,17 +124,8 @@ def task3(start: bool):
         logger.error(e)
     finally:
         # cleanup
-        # log_file.flush()
-        # error_file.flush()
-        # sleep(5)
         for process in PROCESSES:
             process.kill()
-        # sleep(5)
-        # log_file.close()
-        # error_file.close()
-        # cleanup
-
-        # log_pods()
 
         delete_pods()
 
@@ -206,7 +198,7 @@ def install_mcperf() -> None:
     logger.success("########### Finished Installing mcperf on all 3 machines ###########")
 
 
-def start_mcperf() -> None:
+def start_mcperf() -> Tuple[TextIOWrapper, TextIOWrapper]:
     logger.info("########### Starting Memcached on all 3 machines ###########")
     global PROCESSES
 
@@ -271,8 +263,8 @@ def start_mcperf() -> None:
         client_measure_name,
         mc_perf_measure_start_command,
         is_async=True,
-        stdout=log_file,
-        stderr=error_file,
+        stdout=log_file.fileno(),
+        stderr=error_file.fileno(),
     )
     PROCESSES.append(res)
 
