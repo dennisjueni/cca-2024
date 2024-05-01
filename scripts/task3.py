@@ -2,6 +2,7 @@ import sys
 import click
 import time
 import os
+import subprocess
 
 from time import sleep
 from loguru import logger
@@ -40,10 +41,11 @@ def task3(start: bool):
         start_memcached()
 
         install_mcperf()
-
+        
         start_mcperf()
-
+        
         schedule_batch_jobs()
+        start_time = time.time()
 
         # wait for all PARSEC benchmarks to finish
         while not pods_completed():
@@ -51,13 +53,27 @@ def task3(start: bool):
 
         log_time()
 
+        curr_time = time.time()
+        while curr_time - start_time < 60 * 4:
+            sleep(5)
+            curr_time = time.time()
+    
+        cleanup()
+
     except Exception as e:
         logger.error(e)
-    finally:
         # cleanup
-        for process in PROCESSES:
-            process.kill()
+    finally:
+        cleanup()
 
+
+def cleanup() -> None:
+    for process in PROCESSES:
+        try:
+            process.terminate()
+            process.wait(timeout=5)  # Wait for the process to terminate
+        except subprocess.TimeoutExpired:
+            process.kill()
         delete_pods()
 
 
@@ -179,7 +195,9 @@ def start_mcperf() -> None:
 
     log_file = open(os.path.join(LOG_RESULTS, "mcperf.txt"), "w")
 
-    mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_a_ip} -a {client_agent_b_ip} --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30500:5"
+
+    #modified 30000:30500:5 to 30000:30150:5, to have mcperf finish after 5 minutes instead of 16
+    mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_a_ip} -a {client_agent_b_ip} --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30150:5"
 
     res = ssh_command(client_measure_name, mc_perf_measure_command, is_async=True, file=log_file)
     PROCESSES.append(res)
