@@ -29,13 +29,13 @@ if os.name != "nt":
 def run_command(command: list[str], env: dict[str, str] = env, log_success: bool = True) -> subprocess.CompletedProcess[bytes]:
     res = subprocess.run(command, env=env, capture_output=True)
     if res.returncode != 0:
-        logger.error(f"\nCommand: {" ".join(command)}")
-        print(f"Output: {res.stderr.decode("utf-8")}")
+        logger.error(f"\nCommand: {' '.join(command)}")
+        print(f"Output: {res.stderr.decode('utf-8')}")
         return res
 
     if log_success:
-        logger.success(f"\nCommand: {" ".join(command)}")
-        print(f"Output: {res.stdout.decode("utf-8")}")
+        logger.success(f"\nCommand: {' '.join(command)}")
+        print(f"Output: {res.stdout.decode('utf-8')}")
     return res
 
 
@@ -58,7 +58,7 @@ def ssh_command(
         "--command",
         command,
     ]
-    logger.info(f"\n({"Asynchronous" if is_async else "Synchronous"}) SSH Command on node {node}: {command}")
+    logger.info(f"\n({'Asynchronous' if is_async else 'Synchronous'}) SSH Command on node {node}: {command}")
 
     if is_async:
         return subprocess.Popen(ssh_command, env=env, stdout=file, stderr=subprocess.STDOUT)
