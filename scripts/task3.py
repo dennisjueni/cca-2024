@@ -1,15 +1,14 @@
 from io import TextIOWrapper
 import sys
-import subprocess
 import click
 import time
 import os
 
 from time import sleep
-from typing import Optional, Tuple
+from typing import Tuple
 from loguru import logger
 
-from job import Job
+from scripts.job import Job
 from scripts.delete import delete_pods
 from scripts.utils import (
     Part,
