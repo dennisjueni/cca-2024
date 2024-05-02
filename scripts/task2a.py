@@ -4,6 +4,7 @@ import os
 import subprocess
 
 from scripts.utils import (
+    Part,
     check_output,
     get_jobs_info,
     get_node_info,
@@ -32,7 +33,7 @@ def task2a(start: bool):
 
 def setup(start: bool) -> None:
     if start:
-        start_cluster("part2a.yaml", cluster_name="part2a.k8s.local")
+        start_cluster(part=Part.PART2A)
 
         # Assign the correct label to parsec node
         for line in get_node_info():

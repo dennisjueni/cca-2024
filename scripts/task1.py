@@ -5,6 +5,7 @@ import time
 import os
 
 from scripts.utils import (
+    Part,
     start_cluster,
     run_command,
     pods_ready,
@@ -126,10 +127,7 @@ def setup(start: bool) -> None:
     """Sets up the environment for task 1. This includes starting the cluster, launching memcached and installing memcached on the nodes client-agent and client-measure."""
 
     if start:
-        start_cluster(
-            "part1.yaml",
-            cluster_name="part1.k8s.local",
-        )
+        start_cluster(part=Part.PART1)
     else:
         print("Skipped starting the cluster")
 
@@ -174,8 +172,8 @@ def install_memcached() -> None:
     print("########### Installing Memcached ###########")
     node_info = get_node_info()
 
-    source_path = "./scripts/install_memcached.sh"
-    destination_path = "~/install_memcached.sh"
+    source_path = "./scripts/install_mcperf.sh"
+    destination_path = "~/install_mcperf.sh"
 
     for line in node_info:
         if line[0].startswith("client-agent") or line[0].startswith("client-measure"):
@@ -202,7 +200,7 @@ def install_memcached() -> None:
             copy_file_to_node(line[0], source_path=source_path, destination_path=destination_path)
 
             # Installing the file
-            print(f"Installing memcached on {line[0]}")
+            print(f"Installing mcperf on {line[0]}")
             install_command = [
                 "gcloud",
                 "compute",

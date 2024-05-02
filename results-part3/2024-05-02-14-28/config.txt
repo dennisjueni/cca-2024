@@ -1,0 +1,12 @@
+# Node A
+blackscholes_job = Job("blackscholes", "blackscholes", "node-a-2core", "1", 1)
+
+# Node B
+canneal_job = Job("canneal", "canneal", "node-b-4core", "0,1", 2)
+ferret_job = Job("ferret", "ferret", "node-b-4core", "2,3", 2)
+
+# Node C
+freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4", 5)
+vips_job = Job("vips", "vips", "node-c-8core", "5,6", 2)
+radix_job = Job("radix", "radix", "node-c-8core", "7", 1, benchmark_suite="splash2x")
+dedup_job = Job("dedup", "dedup", "node-c-8core", "7", 1, depends_on=[radix_job])

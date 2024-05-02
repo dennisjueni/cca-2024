@@ -1,0 +1,16 @@
+Job:  parsec-blackscholes
+Job time:  0:01:35
+Job:  parsec-canneal
+Job time:  0:02:44
+Job:  parsec-dedup
+Job time:  0:00:44
+Job:  parsec-ferret
+Job time:  0:02:01
+Job:  parsec-freqmine
+Job time:  0:02:27
+Job:  parsec-radix
+Job time:  0:00:56
+Job:  parsec-vips
+Job time:  0:02:20
+Job:  memcached
+Total time: 0:02:49
