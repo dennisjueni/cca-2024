@@ -13,6 +13,7 @@ from scripts.utils import (
     Part,
     copy_file_to_node,
     pods_completed,
+    services_ready,
     ssh_command,
     start_cluster,
     run_command,
@@ -25,7 +26,7 @@ from scripts.utils import (
 
 
 PROCESSES = []
-LOG_RESULTS = os.path.join(".", "results-part3", time.strftime("%Y-%m-%d-%H-%M"))
+LOG_RESULTS = os.path.join(".", "results-part3", "final_runs", time.strftime("%Y-%m-%d-%H-%M"))
 os.makedirs(LOG_RESULTS, exist_ok=True)
 
 
@@ -41,11 +42,10 @@ def task3(start: bool):
         start_memcached()
 
         install_mcperf()
-        
+
         start_mcperf()
-        
+
         schedule_batch_jobs()
-        start_time = time.time()
 
         # wait for all PARSEC benchmarks to finish
         while not pods_completed():
@@ -53,27 +53,12 @@ def task3(start: bool):
 
         log_time()
 
-        curr_time = time.time()
-        while curr_time - start_time < 60 * 5:
-            sleep(5)
-            curr_time = time.time()
-    
-        cleanup()
-
     except Exception as e:
         logger.error(e)
-        # cleanup
     finally:
-        cleanup()
-
-
-def cleanup() -> None:
-    for process in PROCESSES:
-        try:
-            process.terminate()
-            process.wait(timeout=5)  # Wait for the process to terminate
-        except subprocess.TimeoutExpired:
+        for process in PROCESSES:
             process.kill()
+
         delete_pods()
 
 
@@ -105,6 +90,10 @@ def start_memcached() -> None:
     run_command(expose_memcached_command)
 
     while not pods_ready():
+        time.sleep(5)
+
+    # Wait for the memcached service to be exposed!!
+    while not services_ready():
         time.sleep(5)
 
     logger.success("########### Memcached started ###########")
@@ -187,6 +176,8 @@ def start_mcperf() -> None:
     res = ssh_command(client_agent_a_name, mcperf_agent_a_command, is_async=True, file=f_a)
     PROCESSES.append(res)
 
+    time.sleep(5)
+
     mcperf_agent_b_command = "./memcache-perf-dynamic/mcperf -T 4 -A"
     res = ssh_command(client_agent_b_name, mcperf_agent_b_command, is_async=True, file=f_b)
     PROCESSES.append(res)
@@ -195,9 +186,7 @@ def start_mcperf() -> None:
 
     log_file = open(os.path.join(LOG_RESULTS, "mcperf.txt"), "w")
 
-
-    #modified 30000:30500:5 to 30000:30150:5, to have mcperf finish after 5 minutes instead of 16
-    mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_a_ip} -a {client_agent_b_ip} --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30150:5"
+    mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_a_ip} -a {client_agent_b_ip} --noload -T 6 -C 4 -D 4 -Q 1000 -c 4 -t 10 --scan 30000:30500:5"
 
     res = ssh_command(client_measure_name, mc_perf_measure_command, is_async=True, file=log_file)
     PROCESSES.append(res)
@@ -240,9 +229,9 @@ def is_memcached_ready() -> bool:
 
 
 def log_time():
-    get_command = "kubectl get pods -o json > results.json"
+    get_command = f"kubectl get pods -o json > {os.path.join(LOG_RESULTS, 'results.json')}"
     os.system(get_command)
-    get_command = f"python3 get_time.py results.json > {os.path.join(LOG_RESULTS, 'execution_time.txt')}"
+    get_command = f"python3 get_time.py {os.path.join(LOG_RESULTS, 'results.json')} > {os.path.join(LOG_RESULTS, 'execution_time.txt')}"
     os.system(get_command)
 
 

@@ -198,6 +198,17 @@ def pods_ready() -> bool:
     return True
 
 
+def services_ready() -> bool:
+    info = get_info("services")
+    if len(info) == 0:
+        return False
+    for service in info:
+        logger.info(service)
+        if service[3] == "<pending>":
+            return False
+    return True
+
+
 def pods_completed(job_name=None) -> bool:
     info = get_pods_info()
     if len(info) == 0:
