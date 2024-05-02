@@ -249,15 +249,21 @@ def schedule_batch_jobs() -> None:
     # dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
     # jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
 
-    ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2,3", 4)
-    radix_job = Job("radix", "radix", "node-b-4core", "2,3", 2, benchmark_suite="splash2x")
-    vips_job = Job("vips", "vips", "node-b-4core", "2,3", 2, depends_on=[radix_job])
-    freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,5", 8)
-    blackscholes_job = Job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)
-    canneal_job = Job("canneal", "canneal", "node-c-8core", "6,7", 2)
-    dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
+    # ------------ RUN DENNIS 11:20 (02.05.) ------------
+    # Node A
+    blackscholes_job = Job("blackscholes", "blackscholes", "node-a-2core", "1", 1)
 
-    jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
+    # Node B
+    canneal_job = Job("canneal", "canneal", "node-b-4core", "0,1", 2)
+    ferret_job = Job("ferret", "ferret", "node-b-4core", "2,3", 2)
+
+    # Node C
+    freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4", 5)
+    vips_job = Job("vips", "vips", "node-c-8core", "5,6", 2)
+    radix_job = Job("radix", "radix", "node-c-8core", "7", 1, benchmark_suite="splash2x")
+    dedup_job = Job("dedup", "dedup", "node-c-8core", "7", 1, depends_on=[radix_job])
+
+    jobs = [radix_job, freqmine_job, vips_job, canneal_job, ferret_job, blackscholes_job, dedup_job]
 
     while True:
         unstarted_jobs = [job for job in jobs if not job.started]
