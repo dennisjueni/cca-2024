@@ -209,47 +209,8 @@ def schedule_batch_jobs() -> None:
     node a has 2 high performance cores with 2GB of memroy,
     node b has 4 high performance cores with 32GB of memory,
     node c has 8 low performance cores with 32GB of memory
-
-    learnings:
-        scheduling memcached on one core of node a fulfills the SLO
-        radix runs out of memory on the small memory node, so schedule it on node b or c
-        schedule canneal on a high performance node, as it has bad parallelism and needs a lot of CPU time
-        schedule dedup on the second core with memcached, as it also has bad parallelism and does not run out of memory on the small node
     """
 
-    # run 14-34
-    # schedule_single_job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)  # fourth
-    # schedule_single_job("canneal", "canneal", "node-b-4core", "2,3", 2)  # fifth
-    # schedule_single_job("radix", "radix", "node-c-8core", "6,7", 2, benchmark_suite="splash2x")  # first
-    # schedule_single_job("ferret", "ferret", "node-b-4core", "0,1,2", 3)  # seventh (almost 6th)
-    # schedule_single_job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,6,7", 6)  # sixth
-    # schedule_single_job("dedup", "dedup", "node-a-2core", "1", 1)  # second
-    # schedule_single_job("vips", "vips", "node-c-8core", "0,1", 2)  # third
-
-    # TODO : Please Check if depends_on makes sense and works :-)
-    # run 17-55
-    # ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2,3", 4)
-    # radix_job = Job("radix", "radix", "node-b-4core", "2,3", 2, benchmark_suite="splash2x")
-    # vips_job = Job("vips", "vips", "node-b-4core", "2,3", 2, depends_on=[radix_job])
-    # freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,5", 8)
-    # blackscholes_job = Job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)
-    # canneal_job = Job("canneal", "canneal", "node-c-8core", "6,7", 2)
-    # dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
-    # jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
-
-    # run 18-17
-    # ferret_job = Job("ferret", "ferret", "node-b-4core", "0,1,2", 3)
-    # canneal_job = Job("canneal", "canneal", "node-b-4core", "2,3", 2)
-
-    # radix_job = Job("radix", "radix", "node-c-8core", "6,7", 2, benchmark_suite="splash2x")
-    # vips_job = Job("vips", "vips", "node-c-8core", "6,7", 2, depends_on=[radix_job])
-    # freqmine_job = Job("freqmine", "freqmine", "node-c-8core", "0,1,2,3,4,5,6,7", 8)
-    # blackscholes_job = Job("blackscholes", "blackscholes", "node-c-8core", "4,5", 2)
-
-    # dedup_job = Job("dedup", "dedup", "node-a-2core", "1", 1)
-    # jobs = [blackscholes_job, canneal_job, dedup_job, ferret_job, freqmine_job, radix_job, vips_job]
-
-    # ------------ RUN DENNIS 11:20 (02.05.) ------------
     # Node A
     blackscholes_job = Job("blackscholes", "blackscholes", "node-a-2core", "1", 1)
 
