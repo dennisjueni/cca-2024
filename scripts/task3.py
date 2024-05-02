@@ -56,16 +56,9 @@ def task3(start: bool):
     except Exception as e:
         logger.error(e)
     finally:
-        cleanup()
-
-
-def cleanup() -> None:
-    for process in PROCESSES:
-        try:
-            process.terminate()
-            process.wait(timeout=5)  # Wait for the process to terminate
-        except subprocess.TimeoutExpired:
+        for process in PROCESSES:
             process.kill()
+
         delete_pods()
 
 
