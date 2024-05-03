@@ -33,6 +33,8 @@ def run_command(
     if res.returncode != 0:
         logger.error(f"\nCommand: {' '.join(command)}")
         print(f"Output: {res.stderr.decode('utf-8')}")
+        print(f"Return code: {res.returncode}")
+        print(f"Command: {res.stdout.decode('utf-8')})")
         return res
 
     if log_success:

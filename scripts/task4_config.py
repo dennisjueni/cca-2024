@@ -2,6 +2,7 @@ USER = "ubuntu"
 from enum import Enum
 
 MEMCACHED = "memcache-server"
+NUM_THREADS_MEMCACHED = 4
 
 
 class JobEnum(Enum):
