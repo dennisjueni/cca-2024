@@ -36,7 +36,7 @@ class ControllerJob:
         cores = self._get_cores()
         for core in cores:
             available_cores.remove(core)
-        random_cores = random.sample(available_cores, 2)
+        random_cores = random.sample(available_cores, 1)
         cores.append(random_cores)
         self.update_cores(cores)
 
