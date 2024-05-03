@@ -5,7 +5,6 @@ This python script should run alongside `memcached` on
 import time
 from typing import Union
 import docker
-from datetime import datetime
 
 import docker.models
 import docker.models.containers
@@ -33,7 +32,7 @@ class Controller:
             command=command,
             **kwargs,
         )
-        return container
+        return container  # type: ignore
 
     def job_create(self, job_enum: JobEnum, initial_cores: list[str], nr_threads: int) -> None:
         controller_job = ControllerJob(job_enum)
@@ -44,6 +43,7 @@ class Controller:
             controller_job.image,
             command=controller_job._run_command(nr_threads),
             name=controller_job.job.value,
+            cpuset_cpus=",".join(initial_cores),
         )
         controller_job._set_container(container)
         self.jobs.append(controller_job)
@@ -51,21 +51,25 @@ class Controller:
 
     def create_jobs(self):
         for job in JobEnum:
-            self.job_create(job, initial_cores="0", nr_threads=3)  # TODO : Threads ?
+            self.job_create(job, initial_cores=["0"], nr_threads=3)  # TODO : Threads ?
 
     def extract_job(self, job: Union[JobEnum, ControllerJob]) -> ControllerJob:
         assert isinstance(job, JobEnum) or isinstance(job, ControllerJob), f"Invalid job type: {type(job)}"
+
         if isinstance(job, JobEnum):
             for controller_job in self.jobs:
                 if controller_job.job == job:
                     job = controller_job
-                    break
+                    return controller_job
+            raise ValueError(f"Job {job} not found in current jobs: {self.jobs}")
+
         return job
 
     def monitor_container_cpu(self):
         for job in self.jobs:
             stats = job.container.stats(stream=False)
             logger.info(f"Stats for {str(job)} container: {stats}")
+
             cpu_percent = stats["cpu_stats"]["cpu_usage"]["total_usage"] / stats["cpu_stats"]["system_cpu_usage"] * 100
             logger.info(f"{str(job)} container CPU usage: {cpu_percent:.2f}%")
 
@@ -78,7 +82,7 @@ class Controller:
 
     def is_system_overloaded(self, cpu_threshold: float = 90) -> bool:
         cpu_percent, memory = self.monitor_system_stats()
-        return cpu_percent < cpu_threshold
+        return cpu_percent < cpu_threshold  # TODO : Should this not be the other way around?
 
     def schedule_loop(self):
         # TODO : Implement the scheduling loop in a

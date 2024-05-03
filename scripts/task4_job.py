@@ -9,7 +9,7 @@ class ControllerJob:
     def __init__(self, job: JobEnum):
         self.job = job
         self.image = DOCKERIMAGES[job]
-        self.container: docker.models.containers.Container = None
+        self.container: docker.models.containers.Container
         self.is_paused = False
 
     def _set_container(self, container: docker.models.containers.Container):
@@ -24,6 +24,11 @@ class ControllerJob:
         return self.container.status == "exited"
 
     def _get_cores(self) -> list[str]:
+        if self.container.attrs is None:
+            self.container.reload()
+            if self.container.attrs is None:
+                raise ValueError("Somehow container attrs are still None after reloading")
+
         logger.debug(f"Getting cores for {str(self)} container: {self.container.attrs['HostConfig']['CpusetCpus']}")
         return self.container.attrs["HostConfig"]["CpusetCpus"].split(",")
 
@@ -36,8 +41,14 @@ class ControllerJob:
         cores = self._get_cores()
         for core in cores:
             available_cores.remove(core)
-        random_cores = random.sample(available_cores, 1)
-        cores.append(random_cores)
+
+        if len(available_cores) == 0:
+            logger.warning(f"No available cores to add to {str(self)} container")
+            return
+
+        # get a random core out of the list available_cores
+        random_core = random.choice(available_cores)
+        cores.append(random_core)
         self.update_cores(cores)
 
     def end(self) -> None:
