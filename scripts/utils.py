@@ -26,7 +26,9 @@ if os.name != "nt":
 #### END SETUP ENVIRONMENT VARIABLES ####
 
 
-def run_command(command: list[str], env: dict[str, str] = env, log_success: bool = True) -> subprocess.CompletedProcess[bytes]:
+def run_command(
+    command: list[str], env: dict[str, str] = env, log_success: bool = True
+) -> subprocess.CompletedProcess[bytes]:
     res = subprocess.run(command, env=env, capture_output=True)
     if res.returncode != 0:
         logger.error(f"\nCommand: {' '.join(command)}")
@@ -40,11 +42,7 @@ def run_command(command: list[str], env: dict[str, str] = env, log_success: bool
 
 
 def ssh_command(
-    node: str,
-    command: str,
-    env: dict[str, str] = env,
-    is_async: bool = False,
-    file=None
+    node: str, command: str, env: dict[str, str] = env, is_async: bool = False, file=None
 ) -> subprocess.CompletedProcess[bytes] | subprocess.Popen[bytes]:
     ssh_command = [
         "gcloud",
@@ -249,6 +247,25 @@ def copy_file_to_node(node: str, source_path: str, destination_path: str) -> Non
         "europe-west3-a",
         source_path,
         f"ubuntu@{node}:{destination_path}",
+    ]
+    run_command(copy_command, dict(os.environ))
+
+
+# copy from node is EXPERIMENTAL!!!
+def copy_file_from_node(node: str, source_path: str, destination_path: str) -> None:
+
+    print(f"Copying file {source_path} to node {node}")
+
+    copy_command = [
+        "gcloud",
+        "compute",
+        "scp",
+        "--ssh-key-file",
+        os.path.expanduser("~/.ssh/cloud-computing"),
+        "--zone",
+        "europe-west3-a",
+        f"ubuntu@{node}:{source_path}",
+        destination_path,
     ]
     run_command(copy_command, dict(os.environ))
 

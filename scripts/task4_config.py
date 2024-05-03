@@ -1,6 +1,8 @@
 USER = "ubuntu"
 from enum import Enum
 
+MEMCACHED = "memcache-server"
+
 
 class JobEnum(Enum):
     # MEMCACHED = "memcached"

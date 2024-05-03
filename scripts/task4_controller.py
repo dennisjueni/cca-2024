@@ -104,4 +104,4 @@ class Controller:
             if len(self.jobs) == 0:
                 logger.info("No jobs running. Exiting scheduling loop.")
                 break
-            time.sleep(0.1)
+            time.sleep(1)

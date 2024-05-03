@@ -99,15 +99,16 @@ def start_memcached() -> None:
     logger.success("########### Memcached started ###########")
 
 
-def install_mcperf() -> None:
+def install_mcperf(check_memcached: bool = True) -> None:
     # memcached should already be ready since we wait for it in install_memcached
-    assert is_memcached_ready(), "Memcached pod not ready"
+    if check_memcached:
+        assert is_memcached_ready(), "Memcached pod not ready"
 
     source_path = "./scripts/install_mcperf_dynamic.sh"
     destination_path = "~/install_mcperf_dynamic.sh"
 
     for line in get_node_info():
-        if line[0].startswith("client-agent-") or line[0].startswith("client-measure-"):
+        if line[0].startswith("client-agent") or line[0].startswith("client-measure"):
 
             # First we check if we have already copied the file to the node, if so, we do not do it again
             check_command = f"test -f {destination_path} && echo 'already installed' || echo '-'"
