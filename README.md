@@ -55,6 +55,17 @@ poetry run delete_cluster
   1. `memcached` responds to $95\%$ of requests within $1$ms given $\text{QPS} \leq 30\text{k}\frac{\text{requests}}{s}$
   2. No errors (e.g. out of memory)
 
+## Part 4
+
+- Cluster of 4 nodes:
+
+|         Node Name         |  Role  |  Machine Type  |                 Labels                 |
+| :-----------------------: | :----: | :------------: | :------------------------------------: |
+|   master-europe-west3-a   | Master | e2-standard-2  |                   -                    |
+|      memcache-server      |  Node  | n2d-highmem-4  |   cca-project-nodetype: "memcached"    |
+| client-measure (`mcperf`) |  Node  | e2-standard-2  | cca-project-nodetype: "client-measure" |
+|  client-agent (`mcperf`)  |  Node  | e2-standard-16 |  cca-project-nodetype: "client-agent"  |
+
 ## FAQ
 - **How to select the correct Python interpreter path to make MissingImportWarnings disappear?**
 
