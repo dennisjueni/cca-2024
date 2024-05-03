@@ -10,7 +10,7 @@ from datetime import datetime
 import docker.models
 import docker.models.containers
 from loguru import logger
-from scripts.task4_job import ControllerJob
+from task4_job import ControllerJob
 from task4_config import *
 from docker.client import DockerClient
 import psutil
