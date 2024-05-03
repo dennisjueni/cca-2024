@@ -21,46 +21,40 @@ class Controller:
         self.client: DockerClient = docker.from_env()
         self.jobs: list[ControllerJob] = []
 
-    def job_create(self, job_enum: JobEnum, initial_cores: list[str], initial_threads: int) -> None:
+    def create_container(
+        self, image: str, command: str, name: str, cpuset_cpus: str = "0", **kwargs
+    ) -> docker.models.containers.Container:
+        kwargs["detach"] = kwargs.get("detach", True)
+        kwargs["remove"] = kwargs.get("remove", True)
+        container = self.client.containers.run(
+            image,
+            cpuset_cpus=cpuset_cpus,
+            name=name,
+            command=command,
+            **kwargs,
+        )
+        return container
+
+    def job_create(self, job_enum: JobEnum, initial_cores: list[str], nr_threads: int) -> None:
         controller_job = ControllerJob(job_enum)
         logger.info(
-            f"Starting {str(job_enum)} container with {initial_cores} cores and {initial_threads} threads. Image: {controller_job.image}"
+            f"Starting {str(job_enum)} container with {initial_cores} cores and {nr_threads} threads. Image: {controller_job.image}"
         )
-        container = self.client.containers.run(
+        container = self.create_container(
             controller_job.image,
-            detach=True,
-            remove=True,
-            cpuset_cpus=",".join(initial_cores),
-            name=job_enum.value,
-            command=controller_job._run_command(initial_threads),
+            command=controller_job._run_command(nr_threads),
+            name=controller_job.job.value,
         )
         controller_job._set_container(container)
         self.jobs.append(controller_job)
         logger.info(f"Started {str(controller_job)} container with id {controller_job.container.short_id}")
 
-    #  TODO : MOVE TO CONTROLLERJOB
-    def job_end(self, job: Union[ControllerJob, JobEnum]) -> None:
-        job = self.extract_job(job)
-        logger.info(f"Ending {str(job)} container with id {job.container.short_id}")
-        job.container.stop()
-        self.jobs.remove(job)
+    def create_jobs(self):
+        for job in JobEnum:
+            self.job_create(job, initial_cores="0", nr_threads=3)  # TODO : Threads ?
 
-    def job_update_cores(self, job: Union[ControllerJob, JobEnum], cores: list[str]) -> None:
-        job = self.extract_job(job)
-        logger.info(f"Updating {str(job)} container with cores {cores}")
-        job.container.update(cpuset_cpus=",".join(cores))
-
-    def job_pause(self, job: Union[ControllerJob, JobEnum]) -> None:
-        job = self.extract_job(job)
-        logger.info(f"Pausing {str(job)} container with id {job.container.short_id}")
-        job.container.pause()
-
-    def job_unpause(self, job: Union[ControllerJob, JobEnum]) -> None:
-        job = self.extract_job(job)
-        logger.info(f"Unpausing {str(job)} container with id {job.container.short_id}")
-        job.container.unpause()
-
-    def extract_job(self, job: Union[ControllerJob, JobEnum]) -> ControllerJob:
+    def extract_job(self, job: Union[JobEnum, ControllerJob]) -> ControllerJob:
+        assert isinstance(job, JobEnum) or isinstance(job, ControllerJob), f"Invalid job type: {type(job)}"
         if isinstance(job, JobEnum):
             for controller_job in self.jobs:
                 if controller_job.job == job:
@@ -68,11 +62,10 @@ class Controller:
                     break
         return job
 
-    # TODO : END MOVE
-
     def monitor_container_cpu(self):
         for job in self.jobs:
             stats = job.container.stats(stream=False)
+            logger.info(f"Stats for {str(job)} container: {stats}")
             cpu_percent = stats["cpu_stats"]["cpu_usage"]["total_usage"] / stats["cpu_stats"]["system_cpu_usage"] * 100
             logger.info(f"{str(job)} container CPU usage: {cpu_percent:.2f}%")
 
@@ -83,17 +76,32 @@ class Controller:
         logger.info(f"System memory usage: {str(memory)}.")
         return cpu_percent, memory
 
-    def system_overloaded(self, cpu_threshold: float = 90) -> bool:
+    def is_system_overloaded(self, cpu_threshold: float = 90) -> bool:
         cpu_percent, memory = self.monitor_system_stats()
         return cpu_percent < cpu_threshold
 
     def schedule_loop(self):
         # TODO : Implement the scheduling loop in a
         while True:
-            if self.system_overloaded(90):
+            for job in self.jobs:
+                if job.has_finished():
+                    job.end()
+                    self.jobs.remove(job)
+            if self.is_system_overloaded(80):
                 for job in self.jobs:
-                    self.job_pause(job)  # TODO : do more fancy stuff here - update cores, etc.
-            elif not self.system_overloaded(50):
-                for job in self.jobs:
-                    self.job_unpause(job)  # TODO : do more fancy stuff here - update cores, etc.
+                    if not job.is_paused:
+                        logger.info(f"Pausing {str(job)} container with id {job.container.short_id}")
+                        job.pause()
+                        break
+            else:
+                for job in self.jobs:  # only run one job at a time
+                    if job.is_paused:
+                        job.unpause()
+                        break
+                    if len(job._get_cores()) < psutil.cpu_count():
+                        job.add_core()
+                        break
+            if len(self.jobs) == 0:
+                logger.info("No jobs running. Exiting scheduling loop.")
+                break
             time.sleep(0.1)
