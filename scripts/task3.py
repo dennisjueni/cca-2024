@@ -46,11 +46,17 @@ def task3(start: bool):
 
         start_mcperf()
 
+        # We need this so that we get mcperf logs before we start all the benchmarks
+        sleep(60)
+
         schedule_batch_jobs()
 
         # wait for all PARSEC benchmarks to finish
         while not pods_completed():
             sleep(5)
+
+        # We need this so that we get mcperf logs until all benchmarks have finished
+        sleep(60)
 
         log_time()
 
