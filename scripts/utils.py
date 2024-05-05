@@ -123,6 +123,7 @@ def start_cluster(part: Part) -> None:
     logger.info(
         "In order to ssh into one of the nodes, use:\n'gcloud compute ssh --ssh-key-file ~/.ssh/cloud-computing ubuntu@<MACHINE_NAME> --zone europe-west3-a'"
     )
+    logger.success(f"########### Started cluster for {part} ###########")
 
 
 def delete_cluster(cluster_name: str) -> None:
@@ -304,3 +305,43 @@ def get_pod_ip(pod_name: str) -> Optional[str]:
             return line[5]
 
     return None
+
+
+def install_mcperf(check_memcached: bool = True) -> None:
+    # memcached should already be ready since we wait for it in install_memcached
+    if check_memcached:
+        assert is_memcached_ready(), "Memcached pod not ready"
+
+    source_path = "./scripts/install_mcperf_dynamic.sh"
+    destination_path = "~/install_mcperf_dynamic.sh"
+
+    for line in get_node_info():
+        if line[0].startswith("client-agent") or line[0].startswith("client-measure"):
+
+            # First we check if we have already copied the file to the node, if so, we do not do it again
+            check_command = f"test -f {destination_path} && echo 'already installed' || echo '-'"
+            res = ssh_command(
+                line[0],
+                check_command,
+                is_async=False,
+            )
+
+            if "already installed" in res.stdout.decode("utf-8"):  # type: ignore
+                logger.info(f"Memcached already installed on {line[0]}")
+                continue
+
+            copy_file_to_node(line[0], source_path=source_path, destination_path=destination_path)
+            logger.info(f"Copied the mcperf install script to {line[0]}")
+
+            install_command = f"chmod +x {destination_path} && {destination_path}"
+            ssh_command(
+                line[0],
+                install_command,
+                is_async=False,
+            )
+
+    logger.success("########### Finished Installing mcperf on all mcperf machines ###########")
+
+
+def is_memcached_ready() -> bool:
+    return pods_ready()
