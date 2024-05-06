@@ -37,7 +37,7 @@ class Controller:
         self.logger = SchedulerLogger()
 
     def set_memcached_cores(self, cores: list[int]):
-        self.memcached_cores = len(cores)
+        self.num_memcached_cores = len(cores)
         taskset_command = f"sudo taskset -a -c {','.join(list(map(str, cores)))} -p {self.memcached_pid}"
         subprocess.run(taskset_command.split())
 
@@ -118,7 +118,7 @@ class Controller:
                 current_job = self.jobs.pop(0)
                 current_job.start_container()
 
-                if self.num_memcached_cores == 1:
+                if self.num_memcached_cores == 1 and current_job.job != JobEnum.RADIX:
                     self.logger.job_start(current_job.job, [1, 2, 3], current_job.nr_threads)
                 else:
                     current_job.update_cores([2, 3])
@@ -131,12 +131,16 @@ class Controller:
                 self.logger.update_cores(current_job.job, [2, 3])
                 self.logger.update_cores(JobEnum.MEMCACHED, [0, 1])
 
-            elif  self.is_memcached_underloaded(UNDERLOADED_THRESHOLD) and self.memcached_cores == 2:    
+            elif (
+                self.is_memcached_underloaded(UNDERLOADED_THRESHOLD)
+                and self.num_memcached_cores == 2
+                and current_job.job != JobEnum.RADIX
+            ):
                 self.set_memcached_cores([0])
-                current_job.update_cores([1, 2, 3])
-
-                self.logger.update_cores(current_job.job, [1, 2, 3])
                 self.logger.update_cores(JobEnum.MEMCACHED, [0])
+
+                current_job.update_cores([1, 2, 3])
+                self.logger.update_cores(current_job.job, [1, 2, 3])
 
             time.sleep(0.25)
 

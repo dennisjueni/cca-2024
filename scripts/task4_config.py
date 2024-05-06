@@ -6,13 +6,12 @@ NUM_THREADS_MEMCACHED = 4
 
 
 class JobEnum(Enum):
-    # MEMCACHED = "memcached"
+    RADIX = "radix"
     BLACKSCHOLES = "blackscholes"
     CANNEAL = "canneal"
     DEDUP = "dedup"
     FERRET = "ferret"
     FREQMINE = "freqmine"
-    RADIX = "radix"
     VIPS = "vips"
     SCHEDULER = "scheduler"
     MEMCACHED = "memcached"

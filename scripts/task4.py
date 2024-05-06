@@ -40,7 +40,7 @@ def task4(start: bool):
         start_memcached_controller()
     finally:
         stop_comand = "sudo docker stop $(docker ps -a -q)"
-        remove_command = "sudo docker rm $(docker ps -a -q)"
+        remove_command = "sudo docker rm -f $(docker ps -a -q)"
         for line in get_node_info():
             if line[0].startswith(MEMCACHED):
                 ssh_command(line[0], stop_comand)
@@ -153,11 +153,15 @@ def start_mcperf():
         print("Could not find client-agent-name, client-measure, or memcached node")
         sys.exit(1)
 
+    # make sure that no instance of mcperf is running
+    ssh_command(client_measure_name, "sudo pkill mcperf")
+    ssh_command(client_agent_name, "sudo pkill mcperf")
+
     mcperf_agent_command = "./memcache-perf-dynamic/mcperf -T 16 -A"
     log_agent_file = open(os.path.join(LOG_RESULTS, "mcperf_agent.txt"), "w")
     ssh_command(client_agent_name, mcperf_agent_command, is_async=True, file=log_agent_file)  # type: ignore
 
-    mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_ip} --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 1800 --qps_interval 10 --qps_min 5000 --qps_max 100000"
+    mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_ip} --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 1000 --qps_interval 10 --qps_min 5000 --qps_max 100000"
     log_file = open(os.path.join(LOG_RESULTS, "mcperf.txt"), "w")
     ssh_command(client_measure_name, mc_perf_measure_command, is_async=True, file=log_file)  # type: ignore
 
