@@ -5,9 +5,12 @@ from scripts.utils import delete_cluster, run_command
 
 @click.command()
 def delete_cluster_cli() -> None:
-    for i in range(1,4):
+    for i in range(1, 5):
         cluster_name = f"part{i}.k8s.local"
-        delete_cluster(cluster_name)
+        try:
+            delete_cluster(cluster_name)
+        except Exception as e:
+            logger.error(f"Error deleting cluster {cluster_name}: {e}")
     print("########### Cluster deleted ###########")
 
 
@@ -20,4 +23,3 @@ def delete_pods() -> None:
     logger.info("Deleting all services.")
     run_command(["kubectl", "delete", "services", "--all"])
     logger.success("########### Pods, Jobs & Services deleted ###########")
-
