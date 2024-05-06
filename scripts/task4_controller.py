@@ -40,6 +40,7 @@ class Controller:
         self.num_memcached_cores = len(cores)
         taskset_command = f"sudo taskset -a -c {','.join(list(map(str, cores)))} -p {self.memcached_pid}"
         subprocess.run(taskset_command.split())
+        self.logger.update_cores(JobEnum.MEMCACHED, cores=cores)
 
     def start_controlling(self):
         self.set_memcached_cores([0])
@@ -47,7 +48,7 @@ class Controller:
         self.schedule_loop()
 
     def job_create(self, job_enum: JobEnum) -> None:
-        controller_job = ControllerJob(job_enum, client=self.client)
+        controller_job = ControllerJob(job_enum, client=self.client, logger=self.logger)
 
         logger.info(f"Creating {str(job_enum)}-container with image: {controller_job.image}")
 
@@ -109,7 +110,6 @@ class Controller:
             curr_job_finished = current_job.has_finished()
 
             if curr_job_finished:
-                self.logger.job_end(current_job.job)
                 if len(self.jobs) == 0:
                     # This means we have finished all jobs and we can thus break the loop and let memcached run alone
                     break
@@ -118,29 +118,16 @@ class Controller:
                 current_job = self.jobs.pop(0)
                 current_job.start_container()
 
-                if self.num_memcached_cores == 1 and current_job.job != JobEnum.RADIX:
-                    self.logger.job_start(current_job.job, [1, 2, 3], current_job.nr_threads)
-                else:
+                if self.num_memcached_cores != 1:
                     current_job.update_cores([2, 3])
-                    self.logger.job_start(current_job.job, [2, 3], current_job.nr_threads)
 
             if self.is_memcached_overloaded(OVERLOADED_THRESHOLD) and self.num_memcached_cores == 1:
                 current_job.update_cores([2, 3])
                 self.set_memcached_cores([0, 1])
 
-                self.logger.update_cores(current_job.job, [2, 3])
-                self.logger.update_cores(JobEnum.MEMCACHED, [0, 1])
-
-            elif (
-                self.is_memcached_underloaded(UNDERLOADED_THRESHOLD)
-                and self.num_memcached_cores == 2
-                and current_job.job != JobEnum.RADIX
-            ):
+            elif self.is_memcached_underloaded(UNDERLOADED_THRESHOLD) and self.num_memcached_cores == 2:
                 self.set_memcached_cores([0])
-                self.logger.update_cores(JobEnum.MEMCACHED, [0])
-
                 current_job.update_cores([1, 2, 3])
-                self.logger.update_cores(current_job.job, [1, 2, 3])
 
             time.sleep(0.25)
 
@@ -148,10 +135,4 @@ class Controller:
 
 if __name__ == "__main__":
     controller = Controller()
-    try:
-        controller.start_controlling()
-    finally:
-        controller.logger.end()
-        for job in controller.jobs:
-            job.end()
-        controller.client.close()
+    controller.start_controlling()

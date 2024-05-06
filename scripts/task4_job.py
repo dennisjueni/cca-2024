@@ -1,5 +1,7 @@
+from typing import List
 from loguru import logger
 import psutil
+from task4_scheduler_logger import SchedulerLogger
 from task4_config import DOCKERIMAGES, NR_THREADS, JobEnum
 import docker.models.containers
 import random
@@ -7,14 +9,18 @@ from docker.client import DockerClient
 
 class ControllerJob:
 
-    def __init__(self, job: JobEnum, client: DockerClient):
+    def __init__(self, job: JobEnum, client: DockerClient, logger: SchedulerLogger):
         self.job = job
         self.image = DOCKERIMAGES[job]
         self.is_paused = False
         self.client = client
         self.container: docker.models.containers.Container
         self.nr_threads = NR_THREADS[job]
-        self.cpu_cores = []
+        if self.nr_threads == 2:
+            self.cpu_cores = [2, 3]
+        else:
+            self.cpu_cores = [1, 2, 3]
+        self.logger = logger
 
     @property
     def _run_command(self) -> str:
@@ -42,12 +48,18 @@ class ControllerJob:
 
     def start_container(self) -> bool:
         self.container.start()
+        self.logger.job_start(self.job, self.cpu_cores, self.nr_threads)
         self.is_paused = False
         return True
 
     def has_finished(self) -> bool:
         self.container.reload()
-        return self.container.status.lower().startswith("exited")
+        has_finished = self.container.status.lower().startswith("exited")
+
+        if has_finished:
+            self.logger.job_end(self.job)
+
+        return has_finished
 
     def get_cores(self) -> list[int]:
         return self.cpu_cores
@@ -84,6 +96,7 @@ class ControllerJob:
         logger.info(f"Updating {str(self)} container with cores {cores}")
         self.cpu_cores = cores
         self.container.update(cpuset_cpus=",".join(list(map(str, cores))))
+        self.logger.update_cores(self.job, cores)
 
     def pause(self) -> None:
         logger.info(f"Pausing {str(self)} container with id {self.container.short_id}")

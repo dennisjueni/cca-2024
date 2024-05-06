@@ -33,7 +33,7 @@ NR_THREADS = {
     JobEnum.DEDUP: 3,
     JobEnum.FERRET: 3,
     JobEnum.FREQMINE: 3,
-    JobEnum.RADIX: 3,
+    JobEnum.RADIX: 2,
     JobEnum.VIPS: 3,
 }
 
