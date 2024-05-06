@@ -22,7 +22,7 @@ class ControllerJob:
         benchmark_name = self.job.value
         return f"./run -a run -S {benchmark_suite} -p {benchmark_name} -i native -n {self.nr_threads}"
 
-    def create_container(self, **kwargs) -> docker.models.containers.Container:
+    def create_container(self, cores: list[int], **kwargs) -> docker.models.containers.Container:
         kwargs["detach"] = kwargs.get("detach", True)
 
         self.client.images.pull(self.image)
@@ -30,6 +30,7 @@ class ControllerJob:
         self.container = self.client.containers.create(
             self.image,
             name=self.job.value,
+            cpuset_cpus=",".join(str(cores)),
             command=self._run_command,
             **kwargs,
         )  # type: ignore
@@ -39,9 +40,8 @@ class ControllerJob:
 
         return self.container  # type: ignore
 
-    def start_container(self, cores: list[int]) -> bool:
-
-        self.container.start(cpuset_cpus=",".join(str(cores)))
+    def start_container(self) -> bool:
+        self.container.start()
         self.is_paused = False
         return True
 

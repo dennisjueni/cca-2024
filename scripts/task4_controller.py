@@ -51,7 +51,7 @@ class Controller:
 
         logger.info(f"Creating {str(job_enum)}-container with image: {controller_job.image}")
 
-        controller_job.create_container()
+        controller_job.create_container(cores=[1, 2, 3])
 
         self.jobs.append(controller_job)
         logger.info(f"Created {str(controller_job)} container with id {controller_job.container.short_id}")
@@ -103,7 +103,7 @@ class Controller:
         UNDERLOADED_THRESHOLD = 40
 
         current_job = self.jobs.pop(0)
-        current_job.start_container([1, 2, 3])
+        current_job.start_container()
 
         while True:
             curr_job_finished = current_job.has_finished()
@@ -116,8 +116,13 @@ class Controller:
 
                 # This means we can start the next job in the list and run it optimistically on 3 cores
                 current_job = self.jobs.pop(0)
-                current_job.start_container([1, 2, 3] if self.num_memcached_cores == 1 else [2, 3])
-                self.logger.job_start(current_job.job, [1, 2, 3], current_job.nr_threads)
+                current_job.start_container()
+
+                if self.num_memcached_cores == 1:
+                    self.logger.job_start(current_job.job, [1, 2, 3], current_job.nr_threads)
+                else:
+                    current_job.update_cores([2, 3])
+                    self.logger.job_start(current_job.job, [2, 3], current_job.nr_threads)
 
             if self.is_memcached_overloaded(OVERLOADED_THRESHOLD) and self.num_memcached_cores == 1:
                 current_job.update_cores([2, 3])

@@ -34,7 +34,7 @@ def task4(start: bool):
     install_mcperf(False)  # install dynamic mcperf on agent and measure
     start_mcperf()
 
-    time.sleep(20)
+    # time.sleep(20)
 
     start_memcached_controller()
 
@@ -79,7 +79,6 @@ def copy_task4():
 
             ssh_command(line[0], f"sudo apt install python3-pip -y")
             ssh_command(line[0], f"pip install -r {requirements_path}")
-            ssh_command(line[0], sudo_command)
 
             logger.success(f"Installed requirements to {line[0]}")
 
@@ -93,6 +92,11 @@ def install_memcached_and_docker():
 
             copy_file_to_node(line[0], source_path, destination_path)
             ssh_command(line[0], "sudo bash ~/install_docker.sh")
+
+            ssh_command(line[0], sudo_command)
+
+            # brutzel brutzel tsch tsch
+            time.sleep(5)
 
             logger.info(f"Installed docker to {line[0]}")
 
