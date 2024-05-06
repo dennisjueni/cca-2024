@@ -26,5 +26,15 @@ DOCKERIMAGES = {
     JobEnum.VIPS: "anakli/cca:parsec_vips",
 }
 
+NR_THREADS = {
+    JobEnum.BLACKSCHOLES: 3,
+    JobEnum.CANNEAL: 3,
+    JobEnum.DEDUP: 3,
+    JobEnum.FERRET: 3,
+    JobEnum.FREQMINE: 3,
+    JobEnum.RADIX: 3,
+    JobEnum.VIPS: 3,
+}
+
 sudo_command = f"sudo usermod -a -G docker {USER}"
 # TODO : Need to run this command on the host machine

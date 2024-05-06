@@ -1,44 +1,61 @@
 from loguru import logger
 import psutil
-from task4_config import DOCKERIMAGES, JobEnum
+from task4_config import DOCKERIMAGES, NR_THREADS, JobEnum
 import docker.models.containers
 import random
-
+from docker.client import DockerClient
 
 class ControllerJob:
-    def __init__(self, job: JobEnum):
+
+    def __init__(self, job: JobEnum, client: DockerClient):
         self.job = job
         self.image = DOCKERIMAGES[job]
-        self.container: docker.models.containers.Container
         self.is_paused = False
+        self.client = client
+        self.container: docker.models.containers.Container
+        self.nr_threads = NR_THREADS[job]
+        self.cpu_cores = []
 
-    def _set_container(self, container: docker.models.containers.Container):
-        self.container = container
-
-    def _run_command(self, nr_threads: int) -> str:
+    @property
+    def _run_command(self) -> str:
         benchmark_suite = "parsec" if self.job != JobEnum.RADIX else "splash2x"
         benchmark_name = self.job.value
-        return f"./run -a run -S {benchmark_suite} -p {benchmark_name} -i native -n {nr_threads}"
+        return f"./run -a run -S {benchmark_suite} -p {benchmark_name} -i native -n {self.nr_threads}"
+
+    def create_container(self, **kwargs) -> docker.models.containers.Container:
+        kwargs["detach"] = kwargs.get("detach", True)
+        kwargs["remove"] = kwargs.get("remove", True)
+        self.container = self.client.containers.create(
+            self.image,
+            name=self.job.value,
+            command=self._run_command,
+            **kwargs,
+        )  # type: ignore
+
+        # If the container is created, it does not start yet so we set the state to paused
+        self.is_paused = True
+
+        return self.container  # type: ignore
+
+    def start_container(self, cores: list[int]) -> bool:
+
+        self.container.start(cpuset_cpus=",".join(str(cores)))
+        self.is_paused = False
+        return True
 
     def has_finished(self) -> bool:
         return self.container.status == "exited"
 
-    def _get_cores(self) -> list[str]:
-        if self.container.attrs is None:
-            self.container.reload()
-            if self.container.attrs is None:
-                raise ValueError("Somehow container attrs are still None after reloading")
+    def get_cores(self) -> list[int]:
+        return self.cpu_cores
 
-        logger.debug(f"Getting cores for {str(self)} container: {self.container.attrs['HostConfig']['CpusetCpus']}")
-        return self.container.attrs["HostConfig"]["CpusetCpus"].split(",")
-
-    def _available_cores(self) -> list[str]:
-        return [str(i) for i in range(0, psutil.cpu_count())]
+    def _available_cores(self) -> list[int]:
+        return [i for i in range(0, psutil.cpu_count())]
 
     def add_core(self) -> None:
         logger.info(f"Adding cores to {str(self)} container")
-        available_cores = self._available_cores()
-        cores = self._get_cores()
+        available_cores: list[int] = self._available_cores()
+        cores: list[int] = self.get_cores()
         for core in cores:
             available_cores.remove(core)
 
@@ -55,10 +72,11 @@ class ControllerJob:
         logger.info(f"Ending {str(self)} container with id {self.container.short_id}")
         self.container.stop()
 
-    def update_cores(self, cores: list[str]) -> None:
+    def update_cores(self, cores: list[int]) -> None:
+        # invariant: The list of cores is always available!
         logger.info(f"Updating {str(self)} container with cores {cores}")
         self.cpu_cores = cores
-        self.container.update(cpuset_cpus=",".join(cores))
+        self.container.update(cpuset_cpus=",".join(str(cores)))
 
     def pause(self) -> None:
         logger.info(f"Pausing {str(self)} container with id {self.container.short_id}")

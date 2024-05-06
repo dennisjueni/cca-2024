@@ -34,6 +34,28 @@ def task4(start: bool):
     install_mcperf(False)  # install dynamic mcperf on agent and measure
     start_mcperf()
 
+    time.sleep(20)
+
+    start_memcached_controller()
+
+
+def start_memcached_controller():
+    logger.info("########### Starting Memcached Controller ###########")
+    node_info = get_node_info()
+    memcached_name = None
+
+    for line in node_info:
+        if line[0].startswith(MEMCACHED):
+            memcached_name = line[0]
+
+    if memcached_name is None:
+        logger.error("Could not find the controller node")
+        sys.exit(1)
+
+    ssh_command(memcached_name, "python3 ~/task4_controller.py")
+
+    logger.success(f"Started memcached controller on {memcached_name}")
+
 
 def copy_task4():
     requirements_path = "requirements_part4.txt"

@@ -135,8 +135,9 @@ def delete_cluster(cluster_name: str) -> None:
     environment_dict["PROJECT"] = PROJECT
 
     delete_comand = ["kops", "delete", "cluster", cluster_name, "--yes"]
-    run_command(delete_comand, environment_dict)
-
+    res = run_command(delete_comand, environment_dict)
+    if res.returncode != 0:
+        raise Exception(f"Cluster not found: {cluster_name}!")
     delete_bucket_command = ["gsutil", "rm", "-r", KOPS_STATE_STORE]
     run_command(delete_bucket_command, environment_dict)
 
