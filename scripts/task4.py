@@ -35,9 +35,12 @@ def task4(start: bool):
         install_mcperf(False)  # install dynamic mcperf on agent and measure
         start_mcperf()
 
-        # time.sleep(20)
+        time.sleep(20)
 
         start_memcached_controller()
+
+        # A safety to wait for mcperf to finish
+        time.sleep(1000)
     finally:
         stop_comand = "sudo docker stop $(docker ps -a -q)"
         remove_command = "sudo docker rm -f $(docker ps -a -q)"
