@@ -29,7 +29,7 @@ def task4(start: bool):
         start_cluster(part=Part.PART4)
 
     copy_task4()
-    install_memcached()
+    install_memcached_and_docker()
 
     install_mcperf(False)  # install dynamic mcperf on agent and measure
     start_mcperf()
@@ -79,13 +79,22 @@ def copy_task4():
 
             ssh_command(line[0], f"sudo apt install python3-pip -y")
             ssh_command(line[0], f"pip install -r {requirements_path}")
+            ssh_command(line[0], sudo_command)
 
             logger.success(f"Installed requirements to {line[0]}")
 
 
-def install_memcached():
+def install_memcached_and_docker():
     for line in get_node_info():
         if line[0].startswith(MEMCACHED):
+
+            source_path = "./scripts/install_docker.sh"
+            destination_path = "~/install_docker.sh"
+
+            copy_file_to_node(line[0], source_path, destination_path)
+            ssh_command(line[0], "sudo bash ~/install_docker.sh")
+
+            logger.info(f"Installed docker to {line[0]}")
 
             memcached_ip = get_node_ip(MEMCACHED)
             if memcached_ip is None:
@@ -136,7 +145,7 @@ def start_mcperf():
     log_agent_file = open(os.path.join(LOG_RESULTS, "mcperf_agent.txt"), "w")
     ssh_command(client_agent_name, mcperf_agent_command, is_async=True, file=log_agent_file)
 
-    mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_ip} --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 10 --qps_interval 2 --qps_min 5000 --qps_max 100000"
+    mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_ip} --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 1800 --qps_interval 10 --qps_min 5000 --qps_max 100000"
     log_file = open(os.path.join(LOG_RESULTS, "mcperf.txt"), "w")
     ssh_command(client_measure_name, mc_perf_measure_command, is_async=True, file=log_file)
 

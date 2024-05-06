@@ -8,6 +8,7 @@ import docker
 import docker.models
 import docker.models.containers
 from loguru import logger
+from task4_scheduler_logger import SchedulerLogger
 from task4_job import ControllerJob
 from task4_config import JobEnum
 from docker.client import DockerClient
@@ -33,11 +34,12 @@ class Controller:
         self.jobs: list[ControllerJob] = []
         self.memcached_pid = memcached_pid()
         self.num_memcached_cores = 1
-    
-    def set_memcached_cores(self, cores: list):
+        self.logger = SchedulerLogger()
+
+    def set_memcached_cores(self, cores: list[int]):
         self.memcached_cores = len(cores)
-        taskset_command =  f"taskset -a -cp {",".join(cores)} {self.memcached_pid}"
-        subprocess.run(taskset_command)
+        taskset_command = f"sudo taskset -a -c {','.join(list(map(str, cores)))} -p {self.memcached_pid}"
+        subprocess.run(taskset_command.split())
 
     def start_controlling(self):
         self.set_memcached_cores([0])
@@ -56,6 +58,8 @@ class Controller:
 
     def create_jobs(self):
         for job in JobEnum:
+            if job == JobEnum.MEMCACHED or job == JobEnum.SCHEDULER:
+                continue
             self.job_create(job)
 
     def extract_job(self, job: Union[JobEnum, ControllerJob]) -> ControllerJob:
@@ -89,11 +93,9 @@ class Controller:
         cpu_percent, _ = self.monitor_system_stats()
         return cpu_percent > cpu_threshold
 
-
     def is_memcached_underloaded(self, cpu_threshold: float = 40) -> bool:
         cpu_percent, _ = self.monitor_system_stats()
         return cpu_percent < cpu_threshold
-
 
     def schedule_loop(self):
 
@@ -106,28 +108,42 @@ class Controller:
         while True:
             curr_job_finished = current_job.has_finished()
 
-            if curr_job_finished and len(self.jobs) == 0:
-                # This means we have finished all jobs and we can thus break the loop and let memcached run alone
-                break
-            elif curr_job_finished:
+            if curr_job_finished:
+                self.logger.job_end(current_job.job)
+                if len(self.jobs) == 0:
+                    # This means we have finished all jobs and we can thus break the loop and let memcached run alone
+                    break
+
                 # This means we can start the next job in the list and run it optimistically on 3 cores
                 current_job = self.jobs.pop(0)
-                current_job.start_container([1, 2, 3])
-        
+                current_job.start_container([1, 2, 3] if self.num_memcached_cores == 1 else [2, 3])
+                self.logger.job_start(current_job.job, [1, 2, 3], current_job.nr_threads)
 
             if self.is_memcached_overloaded(OVERLOADED_THRESHOLD) and self.num_memcached_cores == 1:
-                    current_job.update_cores([2, 3])
-                    self.set_memcached_cores([0, 1])
+                current_job.update_cores([2, 3])
+                self.set_memcached_cores([0, 1])
+
+                self.logger.update_cores(current_job.job, [2, 3])
+                self.logger.update_cores(JobEnum.MEMCACHED, [0, 1])
 
             elif  self.is_memcached_underloaded(UNDERLOADED_THRESHOLD) and self.memcached_cores == 2:    
-                    self.set_memcached_cores([0])
-                    current_job.update_cores([1, 2, 3])
+                self.set_memcached_cores([0])
+                current_job.update_cores([1, 2, 3])
 
+                self.logger.update_cores(current_job.job, [1, 2, 3])
+                self.logger.update_cores(JobEnum.MEMCACHED, [0])
 
             time.sleep(0.25)
-        
+
         time.sleep(70)
 
 if __name__ == "__main__":
     controller = Controller()
-    controller.start_controlling()
+    try:
+        controller.start_controlling()
+    finally:
+        controller.logger.end()
+        for job in controller.jobs:
+            job.end()
+            job.remove()
+        controller.client.close()

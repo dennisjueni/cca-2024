@@ -24,7 +24,9 @@ class ControllerJob:
 
     def create_container(self, **kwargs) -> docker.models.containers.Container:
         kwargs["detach"] = kwargs.get("detach", True)
-        kwargs["remove"] = kwargs.get("remove", True)
+
+        self.client.images.pull(self.image)
+
         self.container = self.client.containers.create(
             self.image,
             name=self.job.value,
@@ -71,6 +73,10 @@ class ControllerJob:
     def end(self) -> None:
         logger.info(f"Ending {str(self)} container with id {self.container.short_id}")
         self.container.stop()
+
+    def remove(self) -> None:
+        logger.info(f"Removing {str(self)} container with id {self.container.short_id}")
+        self.container.remove()
 
     def update_cores(self, cores: list[int]) -> None:
         # invariant: The list of cores is always available!

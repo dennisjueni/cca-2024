@@ -14,6 +14,8 @@ class JobEnum(Enum):
     FREQMINE = "freqmine"
     RADIX = "radix"
     VIPS = "vips"
+    SCHEDULER = "scheduler"
+    MEMCACHED = "memcached"
 
 
 DOCKERIMAGES = {
@@ -37,4 +39,3 @@ NR_THREADS = {
 }
 
 sudo_command = f"sudo usermod -a -G docker {USER}"
-# TODO : Need to run this command on the host machine
