@@ -150,5 +150,4 @@ if __name__ == "__main__":
         controller.logger.end()
         for job in controller.jobs:
             job.end()
-            job.remove()
         controller.client.close()

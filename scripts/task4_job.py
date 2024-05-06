@@ -30,7 +30,7 @@ class ControllerJob:
         self.container = self.client.containers.create(
             self.image,
             name=self.job.value,
-            cpuset_cpus=",".join(str(cores)),
+            cpuset_cpus=",".join(list(map(str, cores))),
             command=self._run_command,
             **kwargs,
         )  # type: ignore
@@ -46,7 +46,8 @@ class ControllerJob:
         return True
 
     def has_finished(self) -> bool:
-        return self.container.status == "exited"
+        self.container.reload()
+        return self.container.status.lower().startswith("exited")
 
     def get_cores(self) -> list[int]:
         return self.cpu_cores
@@ -82,7 +83,7 @@ class ControllerJob:
         # invariant: The list of cores is always available!
         logger.info(f"Updating {str(self)} container with cores {cores}")
         self.cpu_cores = cores
-        self.container.update(cpuset_cpus=",".join(str(cores)))
+        self.container.update(cpuset_cpus=",".join(list(map(str, cores))))
 
     def pause(self) -> None:
         logger.info(f"Pausing {str(self)} container with id {self.container.short_id}")

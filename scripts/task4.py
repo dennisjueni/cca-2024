@@ -25,18 +25,26 @@ os.makedirs(LOG_RESULTS, exist_ok=True)
     "--start", "-s", help="Flag indicating if the cluster should be started", is_flag=True, default=False, type=bool
 )
 def task4(start: bool):
-    if start:
-        start_cluster(part=Part.PART4)
+    try:
+        if start:
+            start_cluster(part=Part.PART4)
 
-    copy_task4()
-    install_memcached_and_docker()
+        copy_task4()
+        install_memcached_and_docker()
 
-    install_mcperf(False)  # install dynamic mcperf on agent and measure
-    start_mcperf()
+        install_mcperf(False)  # install dynamic mcperf on agent and measure
+        start_mcperf()
 
-    # time.sleep(20)
+        # time.sleep(20)
 
-    start_memcached_controller()
+        start_memcached_controller()
+    finally:
+        stop_comand = "sudo docker stop $(docker ps -a -q)"
+        remove_command = "sudo docker rm $(docker ps -a -q)"
+        for line in get_node_info():
+            if line[0].startswith(MEMCACHED):
+                ssh_command(line[0], stop_comand)
+                ssh_command(line[0], remove_command)
 
 
 def start_memcached_controller():
@@ -147,11 +155,11 @@ def start_mcperf():
 
     mcperf_agent_command = "./memcache-perf-dynamic/mcperf -T 16 -A"
     log_agent_file = open(os.path.join(LOG_RESULTS, "mcperf_agent.txt"), "w")
-    ssh_command(client_agent_name, mcperf_agent_command, is_async=True, file=log_agent_file)
+    ssh_command(client_agent_name, mcperf_agent_command, is_async=True, file=log_agent_file)  # type: ignore
 
     mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_ip} --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 1800 --qps_interval 10 --qps_min 5000 --qps_max 100000"
     log_file = open(os.path.join(LOG_RESULTS, "mcperf.txt"), "w")
-    ssh_command(client_measure_name, mc_perf_measure_command, is_async=True, file=log_file)
+    ssh_command(client_measure_name, mc_perf_measure_command, is_async=True, file=log_file)  # type: ignore
 
 
 if __name__ == "__main__":

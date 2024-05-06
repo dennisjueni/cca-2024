@@ -44,7 +44,7 @@ def run_command(
 
 
 def ssh_command(
-    node: str, command: str, env: dict[str, str] = env, is_async: bool = False, file=None
+    node: str, command: str, env: dict[str, str] = env, is_async: bool = False, file=subprocess.STDOUT
 ) -> subprocess.CompletedProcess[bytes] | subprocess.Popen[bytes]:
     ssh_command = [
         "gcloud",
@@ -334,7 +334,7 @@ def install_mcperf(check_memcached: bool = True) -> None:
             copy_file_to_node(line[0], source_path=source_path, destination_path=destination_path)
             logger.info(f"Copied the mcperf install script to {line[0]}")
 
-            install_command = f"chmod +x {destination_path} && {destination_path}"
+            install_command = f"sudo chmod +x {destination_path} && sudo {destination_path}"
             ssh_command(
                 line[0],
                 install_command,

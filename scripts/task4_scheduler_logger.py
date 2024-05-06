@@ -21,6 +21,7 @@ class SchedulerLogger:
             ).strip()
             + "\n"
         )
+        self.file.flush()
 
     def job_start(self, job: JobEnum, initial_cores: list[int], initial_threads: int) -> None:
         assert job != JobEnum.SCHEDULER, "You don't have to log SCHEDULER here"
