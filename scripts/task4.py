@@ -79,6 +79,7 @@ def run_part1():
                     start_mcperf(agent_command=agent_command, measure_command=measure_command, log_results=log_results)
 
                     # We will only need this for part 1d!
+                    # TODO: Make sure this runs on a core that is not used by memcached
                     # cpu_file = open(os.path.join(log_results, "cpu_utils.txt"), "w")
                     # ssh_command(memcached_name, "python3 ~/task4_cpu.py", is_async=True, file=cpu_file)  # type: ignore
 
