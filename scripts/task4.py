@@ -53,7 +53,7 @@ def run_part1():
             sys.exit(1)
 
         thread_candidates = [1, 2]
-        cores_candidates = [[0], [0, 1]]
+        cores_candidates = [[3], [2, 3]]
 
         base_log_dir = os.path.join(".", "results-part4", "part1", time.strftime("%Y-%m-%d-%H-%M"))
 
@@ -174,7 +174,6 @@ def install_docker():
 
             ssh_command(line[0], sudo_command)
 
-            # brutzel brutzel tsch tsch
             time.sleep(5)
 
             logger.info(f"Installed docker to {line[0]}")
@@ -193,16 +192,14 @@ def install_memcached(num_threads: int):
             ssh_command(line[0], "sudo apt install -y memcached libmemcached-tools")
 
             # copy only once, to use as a starting point
-            with open("scripts/memcached.conf", "r") as f:
+            with open("./scripts/memcached.conf", "r") as f:
                 content = (
                     f.read()
                     .replace("MEMCACHED_INTERNAL_IP", memcached_ip)
                     .replace("MEMORY_LIMIT", "1024")
                     .replace("NUM_THREADS", f"{num_threads}")
                 )
-            with tempfile.NamedTemporaryFile(mode="w") as temp_file:
-                temp_file.write(content)
-                copy_file_to_node(line[0], temp_file.name, "~/memcached.conf")
+                ssh_command(line[0], f'sudo printf "{content}" > ~/memcached.conf')
 
             ssh_command(line[0], "sudo mv ~/memcached.conf /etc/memcached.conf")
             ssh_command(line[0], "sudo systemctl restart memcached")
