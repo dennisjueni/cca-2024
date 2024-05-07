@@ -328,7 +328,7 @@ def install_mcperf(check_memcached: bool = True) -> None:
             )
 
             if "already installed" in res.stdout.decode("utf-8"):  # type: ignore
-                logger.info(f"Memcached already installed on {line[0]}")
+                logger.info(f"Mcperf already installed on {line[0]}")
                 continue
 
             copy_file_to_node(line[0], source_path=source_path, destination_path=destination_path)

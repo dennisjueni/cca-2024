@@ -17,23 +17,91 @@ from task4_config import *
 import tempfile
 
 LOG_RESULTS = os.path.join(".", "results-part4", time.strftime("%Y-%m-%d-%H-%M"))
-os.makedirs(LOG_RESULTS, exist_ok=True)
 
 
 @click.command()
 @click.option(
     "--start", "-s", help="Flag indicating if the cluster should be started", is_flag=True, default=False, type=bool
 )
-def task4(start: bool):
-    try:
-        if start:
-            start_cluster(part=Part.PART4)
+@click.option(
+    "--part", "-p", help="Flag indicating which subpart of part 4 should be run", is_flag=False, default=1, type=int
+)
+def task4(start: bool, part: int):
 
+    if start:
+        start_cluster(part=Part.PART4)
+
+    if part == 1:
+        run_part1()
+    elif part == 2:
+        run_part2()
+
+
+def run_part1():
+    try:
+        # We do not need most of it however it is easier to just copy everything
         copy_task4()
-        install_memcached_and_docker()
+
+        install_mcperf(False)
+
+        memcached_name = None
+        for line in get_node_info():
+            if line[0].startswith(MEMCACHED):
+                memcached_name = line[0]
+        if memcached_name is None:
+            logger.error("Could not find the memcached node")
+            sys.exit(1)
+
+        thread_candidates = [1, 2]
+        cores_candidates = [[0], [0, 1]]
+
+        base_log_dir = os.path.join(".", "results-part4", "part1", time.strftime("%Y-%m-%d-%H-%M"))
+
+        for num_threads in thread_candidates:
+            for cores in cores_candidates:
+                # We will run each of the threads-core-configuration 3 times
+                for i in range(3):
+
+                    install_memcached(num_threads=num_threads)
+
+                    taskset_command = f"sudo taskset -acp {','.join(list(map(str, cores)))} $(pgrep memcached)"
+                    ssh_command(memcached_name, taskset_command)
+
+                    agent_command = "./memcache-perf-dynamic/mcperf -T 16 -A"
+                    measure_command = "./memcache-perf-dynamic/mcperf -s MEMCACHED_IP --loadonly && ./memcache-perf-dynamic/mcperf -s MEMCACHED_IP -a AGENT_IP --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 5 --scan 5000:125000:5000"
+
+                    log_results = os.path.join(
+                        base_log_dir,
+                        f"{len(cores)}C_{num_threads}T",
+                        f"run_{i}",
+                    )
+                    os.makedirs(log_results, exist_ok=True)
+                    start_mcperf(agent_command=agent_command, measure_command=measure_command, log_results=log_results)
+
+                    # We will only need this for part 1d!
+                    # cpu_file = open(os.path.join(log_results, "cpu_utils.txt"), "w")
+                    # ssh_command(memcached_name, "python3 ~/task4_cpu.py", is_async=True, file=cpu_file)  # type: ignore
+
+                    # This is a bit too much, but after 40*5 = 200 seconds we should be done
+                    time.sleep(210)
+
+    finally:
+        print("Part 1 done")
+
+
+def run_part2():
+    try:
+        os.makedirs(LOG_RESULTS, exist_ok=True)
+        copy_task4()
+        install_memcached(num_threads=2)
+        install_docker()
 
         install_mcperf(False)  # install dynamic mcperf on agent and measure
-        start_mcperf()
+
+        agent_command = "./memcache-perf-dynamic/mcperf -T 16 -A"
+        measure_command = "./memcache-perf-dynamic/mcperf -s MEMCACHED_IP --loadonly && ./memcache-perf-dynamic/mcperf -s MEMCACHED_IP -a AGENT_IP --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 1000 --qps_interval 10 --qps_min 5000 --qps_max 100000"
+
+        start_mcperf(agent_command=agent_command, measure_command=measure_command)
 
         time.sleep(20)
 
@@ -94,10 +162,9 @@ def copy_task4():
             logger.success(f"Installed requirements to {line[0]}")
 
 
-def install_memcached_and_docker():
+def install_docker():
     for line in get_node_info():
         if line[0].startswith(MEMCACHED):
-
             source_path = "./scripts/install_docker.sh"
             destination_path = "~/install_docker.sh"
 
@@ -110,6 +177,11 @@ def install_memcached_and_docker():
             time.sleep(5)
 
             logger.info(f"Installed docker to {line[0]}")
+
+
+def install_memcached(num_threads: int):
+    for line in get_node_info():
+        if line[0].startswith(MEMCACHED):
 
             memcached_ip = get_node_ip(MEMCACHED)
             if memcached_ip is None:
@@ -125,7 +197,7 @@ def install_memcached_and_docker():
                     f.read()
                     .replace("MEMCACHED_INTERNAL_IP", memcached_ip)
                     .replace("MEMORY_LIMIT", "1024")
-                    .replace("NUM_THREADS", f"{NUM_THREADS_MEMCACHED}")
+                    .replace("NUM_THREADS", f"{num_threads}")
                 )
             with tempfile.NamedTemporaryFile(mode="w") as temp_file:
                 temp_file.write(content)
@@ -137,7 +209,7 @@ def install_memcached_and_docker():
             logger.success(f"Installed memcached to {line[0]}")
 
 
-def start_mcperf():
+def start_mcperf(agent_command: str, measure_command: str, log_results: str = LOG_RESULTS):
     logger.info("########### Starting Memcached on all 2 machines ###########")
     node_info = get_node_info()
     client_agent_name = None
@@ -152,7 +224,7 @@ def start_mcperf():
     client_agent_ip = get_node_ip("client-agent")
     memcached_ip = get_node_ip(MEMCACHED)
 
-    if client_agent_name is None or client_measure_name is None or memcached_ip is None:
+    if client_agent_name is None or client_measure_name is None or memcached_ip is None or client_agent_ip is None:
         print("Could not find client-agent-name, client-measure, or memcached node")
         sys.exit(1)
 
@@ -160,13 +232,13 @@ def start_mcperf():
     ssh_command(client_measure_name, "sudo pkill mcperf")
     ssh_command(client_agent_name, "sudo pkill mcperf")
 
-    mcperf_agent_command = "./memcache-perf-dynamic/mcperf -T 16 -A"
-    log_agent_file = open(os.path.join(LOG_RESULTS, "mcperf_agent.txt"), "w")
-    ssh_command(client_agent_name, mcperf_agent_command, is_async=True, file=log_agent_file)  # type: ignore
+    log_agent_file = open(os.path.join(log_results, "mcperf_agent.txt"), "w")
+    ssh_command(client_agent_name, agent_command, is_async=True, file=log_agent_file)  # type: ignore
 
-    mc_perf_measure_command = f"./memcache-perf-dynamic/mcperf -s {memcached_ip} --loadonly && ./memcache-perf-dynamic/mcperf -s {memcached_ip} -a {client_agent_ip} --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 1000 --qps_interval 10 --qps_min 5000 --qps_max 100000"
-    log_file = open(os.path.join(LOG_RESULTS, "mcperf.txt"), "w")
-    ssh_command(client_measure_name, mc_perf_measure_command, is_async=True, file=log_file)  # type: ignore
+    measure_command = measure_command.replace("MEMCACHED_IP", memcached_ip).replace("AGENT_IP", client_agent_ip)
+
+    log_file = open(os.path.join(log_results, "mcperf.txt"), "w")
+    ssh_command(client_measure_name, measure_command, is_async=True, file=log_file)  # type: ignore
 
 
 if __name__ == "__main__":
