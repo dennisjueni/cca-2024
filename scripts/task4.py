@@ -60,7 +60,7 @@ def run_part1():
         for num_threads in thread_candidates:
             for cores in cores_candidates:
                 # We will run each of the threads-core-configuration 3 times
-                for i in range(3):
+                for i in range(1):
 
                     install_memcached(num_threads=num_threads)
 
