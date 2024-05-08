@@ -167,7 +167,7 @@ def start_mcperf() -> None:
 def schedule_batch_jobs() -> None:
     """blackscholes,canneal,dedup,ferret,freqmine,radix,vips
 
-    node a has 2 high performance cores with 2GB of memroy,
+    node a has 2 high performance cores with 2GB of memory,
     node b has 4 high performance cores with 32GB of memory,
     node c has 8 low performance cores with 32GB of memory
     """
@@ -185,7 +185,7 @@ def schedule_batch_jobs() -> None:
     radix_job = Job("radix", "radix", "node-c-8core", "7", 1, benchmark_suite="splash2x")
     dedup_job = Job("dedup", "dedup", "node-c-8core", "7", 1, depends_on=[radix_job])
 
-    jobs = [radix_job, freqmine_job, vips_job, canneal_job, ferret_job, blackscholes_job, dedup_job]
+    jobs = [ferret_job, freqmine_job, canneal_job, radix_job, blackscholes_job, vips_job, dedup_job]
 
     while True:
         unstarted_jobs = [job for job in jobs if not job.started]
