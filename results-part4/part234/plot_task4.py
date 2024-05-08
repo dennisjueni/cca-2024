@@ -164,6 +164,7 @@ for run in runs:
         offset = NODE_A_START
     else:
         print("Wrong machine", run[3])
+        sys.exit(1)
     # print(run)
     for core in run[5]:
         ax1.barh(
