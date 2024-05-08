@@ -208,6 +208,11 @@ def generate_plots(current_run: str):
         p95 = entry[-8]
         ax.bar((start + end) / 2, float(p95), width=10, color=p95_color)
 
+    ax.axhline(y=1000, color="navy", linestyle="--", xmax=0.485)
+    ax.axhline(y=1000, color="navy", linestyle="--", xmin=0.515)
+    ax.text(MAX_LEN / 2, 998, 'SLO', va='center', ha='center', color='navy', fontsize=12)
+
+
     box = ax.get_position()
     ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])  # type: ignore
 
