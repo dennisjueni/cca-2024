@@ -53,35 +53,38 @@ def run_part1():
             sys.exit(1)
 
         thread_candidates = [2, 1]
-        cores_candidates = [[2, 3], [3]]
+        cores_candidates = [[1, 2], [1]]
 
         base_log_dir = os.path.join(".", "results-part4", "part1", time.strftime("%Y-%m-%d-%H-%M"))
 
         for num_threads in thread_candidates:
+
+            install_memcached(num_threads=num_threads)
+
             for cores in cores_candidates:
                 # We will run each of the threads-core-configuration 3 times
                 for i in range(3):
 
                     log_results = os.path.join(
                         base_log_dir,
-                        f"{len(cores)}C_{num_threads}T_CPU",
+                        f"{len(cores)}C_{num_threads}T",
                         f"run_{i}",
                     )
+                    os.makedirs(log_results, exist_ok=True)
 
-                    install_memcached(num_threads=num_threads)
+                    cpu_file = open(os.path.join(log_results, "cpu_utils.txt"), "w")
+                    ssh_command(memcached_name, "taskset -c 3 python3 ~/task4_cpu.py", is_async=True, file=cpu_file)  # type: ignore
 
                     taskset_command = f"sudo taskset -acp {','.join(list(map(str, cores)))} $(pgrep memcached)"
                     ssh_command(memcached_name, taskset_command)
 
-                    time.sleep(5)
+                    time.sleep(10)
 
-                    cpu_file = open(os.path.join(log_results, "cpu_utils.txt"), "w")
-                    ssh_command(memcached_name, "python3 ~/task4_cpu.py", is_async=True, file=cpu_file)  # type: ignore
+                    ssh_command(memcached_name, "sudo systemctl status memcached")
 
                     agent_command = "./memcache-perf-dynamic/mcperf -T 16 -A"
                     measure_command = "./memcache-perf-dynamic/mcperf -s MEMCACHED_IP --loadonly && ./memcache-perf-dynamic/mcperf -s MEMCACHED_IP -a AGENT_IP --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 5 --scan 5000:125000:5000"
 
-                    os.makedirs(log_results, exist_ok=True)
                     start_mcperf(agent_command=agent_command, measure_command=measure_command, log_results=log_results)
 
                     time.sleep(200)
@@ -158,7 +161,7 @@ def copy_task4():
             logger.info(f"Copied python scripts to {line[0]}")
 
             ssh_command(line[0], f"sudo apt install python3-pip -y")
-            ssh_command(line[0], f"pip3 install -r {requirements_path}")
+            ssh_command(line[0], f"pip install -r {requirements_path}")
 
             logger.success(f"Installed requirements to {line[0]}")
 
@@ -203,6 +206,8 @@ def install_memcached(num_threads: int):
 
             ssh_command(line[0], "sudo mv ~/memcached.conf /etc/memcached.conf")
             ssh_command(line[0], "sudo systemctl restart memcached")
+
+            time.sleep(10)
 
             logger.success(f"Installed memcached to {line[0]}")
 
