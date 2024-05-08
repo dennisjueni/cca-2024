@@ -2,7 +2,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-MEASURE_DIR = "./results-part4/part1/only_1_run/"
+MEASURE_DIR = "./results-part4/part1/final_run/"
 QPS_MIN = 0
 QPS_MAX = 130_000
 fig = plt.figure(figsize=(16, 9))
@@ -21,7 +21,7 @@ for i in range(4):
     yerr = []
     groups_y = {}
     groups_x = {}
-    for j in range(1):
+    for j in range(3):
         file_path = MEASURE_DIR + f"{suffix[i]}/run_{j}/mcperf.txt"
         file = open(file_path, "r")
         lines = file.read().splitlines()

@@ -52,7 +52,7 @@ def run_part1():
             logger.error("Could not find the memcached node")
             sys.exit(1)
 
-        thread_candidates = [1, 2]
+        thread_candidates = [2]
         cores_candidates = [[3], [2, 3]]
 
         base_log_dir = os.path.join(".", "results-part4", "part1", time.strftime("%Y-%m-%d-%H-%M"))
@@ -72,7 +72,7 @@ def run_part1():
 
                     log_results = os.path.join(
                         base_log_dir,
-                        f"{len(cores)}C_{num_threads}T",
+                        f"{len(cores)}C_{num_threads}T_CPU",
                         f"run_{i}",
                     )
                     os.makedirs(log_results, exist_ok=True)
@@ -80,11 +80,11 @@ def run_part1():
 
                     # We will only need this for part 1d!
                     # TODO: Make sure this runs on a core that is not used by memcached
-                    # cpu_file = open(os.path.join(log_results, "cpu_utils.txt"), "w")
-                    # ssh_command(memcached_name, "python3 ~/task4_cpu.py", is_async=True, file=cpu_file)  # type: ignore
+                    cpu_file = open(os.path.join(log_results, "cpu_utils.txt"), "w")
+                    ssh_command(memcached_name, "python3 ~/task4_cpu.py", is_async=True, file=cpu_file)  # type: ignore
 
                     # This is a bit too much, but after 40*5 = 200 seconds we should be done
-                    time.sleep(210)
+                    time.sleep(200)
 
     finally:
         print("Part 1 done")
