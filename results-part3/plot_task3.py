@@ -17,9 +17,19 @@ colors = {
     "parsec-radix": "#00CCA0",
     "parsec-vips": "#CC0A00",
     "memcached": "#CC00AA",
-    "p95 latency": "C0",
 }
+p95_color = "C0"
 
+labels = {
+    "parsec-blackscholes": "Blackscholes",
+    "parsec-canneal": "Canneal",
+    "parsec-dedup": "Dedup",
+    "parsec-ferret": "Ferret",
+    "parsec-freqmine": "Freqmine",
+    "parsec-radix": "Radix",
+    "parsec-vips": "Vips",
+    "memcached": "Memcached",
+}
 
 def main():
 
@@ -139,7 +149,7 @@ def generate_plots(current_run: str):
 
     MAX_LEN = max((max(completion_times) - min(start_times)).total_seconds(), 180)
 
-    legend_elements = [Patch(facecolor=colors[i], label=i) for i in colors]
+    legend_elements = [Patch(facecolor=colors[i], label=labels[i]) for i in colors]
 
     fig = plt.figure(figsize=(20, 9), dpi=600)
     ax = plt.subplot(111)
@@ -149,8 +159,8 @@ def generate_plots(current_run: str):
     # ax.yaxis.grid(True, which='ma')
     START = min(start_times)
     HEIGHT = 100
-    HEIGHT_NO_OFFSET = 80
-    MARGIN = 200
+    HEIGHT_NO_OFFSET = 90
+    MARGIN = 100
     NODE_A_START = MARGIN + 1000
     ax.axhline(y=NODE_A_START - MARGIN / 2, color="k", linestyle="-")
 
@@ -196,18 +206,24 @@ def generate_plots(current_run: str):
         end = (end - START).total_seconds()
         start = (start - START).total_seconds()
         p95 = entry[-8]
-        ax.bar((start + end) / 2, float(p95), width=10, color=colors["p95 latency"])
+        ax.bar((start + end) / 2, float(p95), width=10, color=p95_color)
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])  # type: ignore
 
+    plt.text(-20, 500 - MARGIN/4, 'P95 latency (ms)')
+    plt.text(-20, (NODE_A_START + NODE_B_START - MARGIN) / 2, 'node-a-2core')
+    plt.text(-20, (NODE_B_START + NODE_C_START - MARGIN) / 2, 'node-b-4core')
+    plt.text(-20, (NODE_C_START + NODE_C_END -MARGIN/2) / 2, 'node-c-8core')
+
+
     # Put a legend below current axis
     ax.legend(
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.08),
+        bbox_to_anchor=(0.5, -0.1),
         fancybox=True,
         shadow=True,
-        ncol=5,
+        ncol=4,
         handles=legend_elements,
         prop={"size": 16},
     )
@@ -228,8 +244,8 @@ def generate_plots(current_run: str):
         ylabels.append(i)
     plt.yticks(yticks, labels=ylabels)
 
-    plt.title(f"Memcached p95 Latency and PARSEC Schedule for Run 3", fontdict={"fontsize": 24}, pad=15)
-    plt.xlabel("time since first job started [s]", fontdict={"fontsize": 18})
+    plt.title(f"P95 Latency of Memcached & Benchmark Schedule", fontdict={"fontsize": 20}, pad=15)
+    plt.xlabel("Time since first PARSEC benchmark start (seconds)", fontdict={"fontsize": 15})
     plt.ylim(0, NODE_C_END)
 
     plt.savefig(fname=f"results-part3/final_runs/{current_run}_plot.pdf")
