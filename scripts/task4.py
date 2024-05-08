@@ -39,9 +39,6 @@ def task4(start: bool, part: int):
 
 def run_part1():
     try:
-        # We do not need most of it however it is easier to just copy everything
-        copy_task4()
-
         install_mcperf(False)
 
         memcached_name = None
@@ -51,6 +48,12 @@ def run_part1():
         if memcached_name is None:
             logger.error("Could not find the memcached node")
             sys.exit(1)
+
+        source_folder = os.path.join(".", "scripts")
+        source_file = os.path.join(source_folder, "task4_cpu.py")
+        copy_file_to_node(memcached_name, source_file, os.path.join("~"))
+        ssh_command(memcached_name, f"sudo apt install python3-pip -y")
+        ssh_command(memcached_name, f"pip install psutil")
 
         thread_candidates = [2, 1]
         cores_candidates = [[1, 2], [1]]
@@ -65,6 +68,9 @@ def run_part1():
                 # We will run each of the threads-core-configuration 3 times
                 for i in range(3):
 
+                    ssh_command(memcached_name, "sudo systemctl restart memcached")
+                    time.sleep(10)
+
                     log_results = os.path.join(
                         base_log_dir,
                         f"{len(cores)}C_{num_threads}T",
@@ -75,7 +81,7 @@ def run_part1():
                     cpu_file = open(os.path.join(log_results, "cpu_utils.txt"), "w")
                     ssh_command(memcached_name, "taskset -c 3 python3 ~/task4_cpu.py", is_async=True, file=cpu_file)  # type: ignore
 
-                    taskset_command = f"sudo taskset -acp {','.join(list(map(str, cores)))} $(pgrep memcached)"
+                    taskset_command = f"sudo taskset -a -cp {','.join(list(map(str, cores)))} $(pgrep memcached)"
                     ssh_command(memcached_name, taskset_command)
 
                     time.sleep(10)
