@@ -93,6 +93,8 @@ class ControllerJob:
 
     def update_cores(self, cores: list[int]) -> None:
         # invariant: The list of cores is always available!
+        if str(cores) == str(self.cpu_cores) or self.has_finished():
+            return
         logger.info(f"Updating {str(self)} container with cores {cores}")
         self.cpu_cores = cores
         self.container.update(cpuset_cpus=",".join(list(map(str, cores))))

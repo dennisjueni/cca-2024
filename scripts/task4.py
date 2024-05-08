@@ -55,17 +55,21 @@ def run_part1():
         ssh_command(memcached_name, f"sudo apt install python3-pip -y")
         ssh_command(memcached_name, f"pip install psutil")
 
-        thread_candidates = [2, 1]
+        num_thread_candidates = [2, 1]
         cores_candidates = [[1, 2], [1]]
 
         base_log_dir = os.path.join(".", "results-part4", "part1", time.strftime("%Y-%m-%d-%H-%M"))
+        os.makedirs(base_log_dir, exist_ok=True)
+        ssh_command(memcached_name, "lscpu > ~/lscpu.txt")
+        copy_file_from_node(memcached_name, "~/lscpu.txt", os.path.join(base_log_dir, "lscpu.txt"))
 
-        for num_threads in thread_candidates:
+        for num_threads in num_thread_candidates:
 
             install_memcached(num_threads=num_threads)
 
             for cores in cores_candidates:
                 # We will run each of the threads-core-configuration 3 times
+                print("Running with", len(cores), "cores and", num_threads, "threads")
                 for i in range(3):
 
                     ssh_command(memcached_name, "sudo systemctl restart memcached")
@@ -219,7 +223,7 @@ def install_memcached(num_threads: int):
 
 
 def start_mcperf(agent_command: str, measure_command: str, log_results: str = LOG_RESULTS):
-    logger.info("########### Starting Memcached on all 2 machines ###########")
+    logger.info("########### Starting Mcperf on all 2 machines ###########")
     node_info = get_node_info()
     client_agent_name = None
     client_measure_name = None

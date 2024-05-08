@@ -33,17 +33,19 @@ class Controller:
         self.client: DockerClient = docker.from_env()
         self.jobs: list[ControllerJob] = []
         self.memcached_pid = memcached_pid()
-        self.num_memcached_cores = 1
+        self.num_memcached_cores = -1 # to not block the memcached set cores
         self.logger = SchedulerLogger()
 
     def set_memcached_cores(self, cores: list[int]):
+        if len(cores) == self.num_memcached_cores:
+            return
         self.num_memcached_cores = len(cores)
         taskset_command = f"sudo taskset -a -c {','.join(list(map(str, cores)))} -p {self.memcached_pid}"
         subprocess.run(taskset_command.split())
         self.logger.update_cores(JobEnum.MEMCACHED, cores=cores)
 
     def start_controlling(self):
-        self.set_memcached_cores([0])
+        self.set_memcached_cores([0,1])
         self.create_jobs()
         self.schedule_loop()
 
@@ -83,8 +85,8 @@ class Controller:
             cpu_percent = stats["cpu_stats"]["cpu_usage"]["total_usage"] / stats["cpu_stats"]["system_cpu_usage"] * 100
             logger.info(f"{str(job)} container CPU usage: {cpu_percent:.2f}%")
 
-    def monitor_system_stats(self):
-        cpu_percent = psutil.cpu_percent(percpu=True)[0]
+    def monitor_system_stats(self, core_idx: int = 0):
+        cpu_percent = psutil.cpu_percent(percpu=True)[core_idx]
         memory = psutil.virtual_memory()
         logger.info(f"System CPU usage: {cpu_percent:.2f}%")
         logger.info(f"System memory usage: {str(memory)}.")
@@ -120,14 +122,14 @@ class Controller:
 
                 if self.num_memcached_cores != 1:
                     current_job.update_cores([2, 3])
+            else:
+                if self.is_memcached_overloaded(OVERLOADED_THRESHOLD): # and self.num_memcached_cores == 1
+                    self.set_memcached_cores([0, 1])
+                    current_job.update_cores([2, 3])
 
-            if self.is_memcached_overloaded(OVERLOADED_THRESHOLD) and self.num_memcached_cores == 1:
-                self.set_memcached_cores([0, 1])
-                current_job.update_cores([2, 3])
-
-            elif self.is_memcached_underloaded(UNDERLOADED_THRESHOLD) and self.num_memcached_cores == 2:
-                self.set_memcached_cores([0])
-                current_job.update_cores([1, 2, 3])
+                elif self.is_memcached_underloaded(UNDERLOADED_THRESHOLD): # and self.num_memcached_cores == 2
+                    self.set_memcached_cores([0, 1])
+                    current_job.update_cores([1, 2, 3])
 
             time.sleep(0.25)
 
