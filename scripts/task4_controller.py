@@ -45,7 +45,8 @@ class Controller:
         self.logger.update_cores(JobEnum.MEMCACHED, cores=cores)
 
     def start_controlling(self):
-        self.set_memcached_cores([0,1])
+        self.logger.job_start(JobEnum.MEMCACHED, initial_cores=[0], initial_threads=2)
+        self.set_memcached_cores([0])
         self.create_jobs()
         self.schedule_loop()
 
@@ -135,6 +136,7 @@ class Controller:
             time.sleep(0.25)
 
         time.sleep(70)
+        self.logger.job_end(JobEnum.MEMCACHED)
 
 if __name__ == "__main__":
     controller = Controller()

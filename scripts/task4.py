@@ -14,9 +14,6 @@ from utils import *
 import os
 from loguru import logger
 from task4_config import *
-import tempfile
-
-LOG_RESULTS = os.path.join(".", "results-part4", time.strftime("%Y-%m-%d-%H-%M"))
 
 
 @click.command()
@@ -105,7 +102,8 @@ def run_part1():
 
 def run_part2():
     try:
-        os.makedirs(LOG_RESULTS, exist_ok=True)
+        base_log_dir = os.path.join(".", "results-part4", "part2", time.strftime("%Y-%m-%d-%H-%M"))
+        os.makedirs(base_log_dir, exist_ok=True)
         copy_task4()
         install_memcached(num_threads=2)
         install_docker()
@@ -115,11 +113,13 @@ def run_part2():
         agent_command = "./memcache-perf-dynamic/mcperf -T 16 -A"
         measure_command = "./memcache-perf-dynamic/mcperf -s MEMCACHED_IP --loadonly && ./memcache-perf-dynamic/mcperf -s MEMCACHED_IP -a AGENT_IP --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 1000 --qps_interval 10 --qps_min 5000 --qps_max 100000"
 
-        start_mcperf(agent_command=agent_command, measure_command=measure_command)
+        start_mcperf(agent_command=agent_command, measure_command=measure_command, log_results=base_log_dir)
 
         time.sleep(20)
 
         start_memcached_controller()
+
+        print("FINISHED STARTING MEMCACHED CONTROLLER")
 
         # A safety to wait for mcperf to finish
         time.sleep(1000)
@@ -222,7 +222,7 @@ def install_memcached(num_threads: int):
             logger.success(f"Installed memcached to {line[0]}")
 
 
-def start_mcperf(agent_command: str, measure_command: str, log_results: str = LOG_RESULTS):
+def start_mcperf(agent_command: str, measure_command: str, log_results: str):
     logger.info("########### Starting Mcperf on all 2 machines ###########")
     node_info = get_node_info()
     client_agent_name = None
