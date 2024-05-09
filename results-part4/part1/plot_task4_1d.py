@@ -63,22 +63,24 @@ for i in range(2):
         p95 = p95 + [float(line[-8]) / 1000 for line in lines]
 
     legend_elements = [
-        Patch(facecolor="royalblue", label="P95", hatch="o", linestyle="-"),
-        Patch(facecolor="orange", label="CPU"),
+        Patch(facecolor="#CC0A00", label="P95 latency"),
+        Patch(facecolor="#00CCA0", label="CPU utilization"),
     ]
 
-    ax1.plot(qps, p95, color="royalblue", label="P95", marker="o")
-    ax1.set_ylabel("p95 tail latency [ms]", color="royalblue")
-    ax1.tick_params(axis="y", labelcolor="royalblue")
+    ax1.plot(qps, p95, color="#CC0A00", label="P95", marker="x")
+    ax1.set_ylabel("P95 Tail Latency (ms)", color="#CC0A00")
+    ax1.tick_params(axis="y", labelcolor="#CC0A00")
     ax1.set_ylim([0, max(p95) + 0.5])
     ax1.hlines(1, QPS_MIN, QPS_MAX, color="k", linestyles="--")
-    ax1.set_xticks(np.arange(0, 130_000 + 1, 26000))
+    ax1.set_xlim(0, 130_000)
+    ax1.set_xticks([0, 25000, 50000, 75000, 100000, 125000])
+    ax1.set_xticklabels(["0", "25'000", "50'000", "75'000", "100'000", "125'000"])
     ax1.grid(True, which="both")
     ax1.set
     ax2 = ax1.twinx()
-    ax2.plot(qps, cpu_usage, color="orange", label="CPU", marker="x")
-    ax2.set_ylabel("CPU utilization [%]", color="orange")
-    ax2.tick_params(axis="y", labelcolor="orange")
+    ax2.plot(qps, cpu_usage, color="#00CCA0", label="CPU", marker="o")
+    ax2.set_ylabel("CPU utilization (%)", color="#00CCA0")
+    ax2.tick_params(axis="y", labelcolor="#00CCA0")
     if i == 0:
         ax2.set_ylim([0, 110])
     else:
@@ -90,11 +92,3 @@ for i in range(2):
     ax1.set_xlabel("QPS")
     plt.savefig(fname=f"{MEASURE_DIR}/plot_1d_{suffix[i]}.pdf")
     plt.close()
-    # plt.errorbar(xs, ys, xerr=xerr, yerr=yerr, label = labels[i], capsize=3)
-# plt.xlabel("QPS")
-# plt.ylabel("p95 latency [ms]")
-# plt.hlines(1, xmin=QPS_MIN, xmax=QPS_MAX, color='k', linestyles='--')
-# plt.xlim(QPS_MIN, QPS_MAX)
-# plt.legend()
-
-# plt.title("P95 latency vs. QPS for Different Number of Threads and Cores")
