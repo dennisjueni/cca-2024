@@ -88,7 +88,6 @@ class Controller:
 
     def monitor_system_stats(self) -> list[float]:
         cpu_percent = psutil.cpu_percent(percpu=True)
-        logger.info(f"System CPU usage: {cpu_percent:.2f}%")
         return cpu_percent
 
     def is_memcached_overloaded(self, cpu_threshold) -> bool:
