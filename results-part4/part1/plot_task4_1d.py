@@ -5,13 +5,13 @@ from datetime import datetime
 from matplotlib.patches import Patch
 
 
-MEASURE_DIR = "./results-part4/part1/final_run_d/"
+MEASURE_DIR = "./results-part4/part1/final_run/"
 QPS_MIN = 0
 QPS_MAX = 130_000
 
 labels = {0: "1 core, 2 threads", 1: "2 cores, 2 threads"}
 
-suffix = {0: "1C_2T_CPU", 1: "2C_2T_CPU"}
+suffix = {0: "1C_2T", 1: "2C_2T"}
 
 for i in range(2):
     fig, ax1 = plt.subplots()
@@ -51,13 +51,13 @@ for i in range(2):
                     continue
                 if time > end:
                     break
-                if count != 0:
+                if count < 2:
                     count += 1
                     continue
                 if i == 0:
-                    cpu_usage.append([float(cpu_l[4])])
+                    cpu_usage.append([float(cpu_l[2])])
                 else:
-                    cpu_usage.append([float(cpu_l[3]) + float(cpu_l[4])])
+                    cpu_usage.append([float(cpu_l[3]) + float(cpu_l[2])])
                 break
 
         p95 = p95 + [float(line[-8]) / 1000 for line in lines]
@@ -88,7 +88,7 @@ for i in range(2):
     plt.xlim(QPS_MIN, QPS_MAX)
     plt.legend(handles=legend_elements)
     ax1.set_xlabel("QPS")
-    plt.savefig(fname=f"test_{suffix[i]}.pdf")
+    plt.savefig(fname=f"{MEASURE_DIR}/plot_1d_{suffix[i]}.pdf")
     plt.close()
     # plt.errorbar(xs, ys, xerr=xerr, yerr=yerr, label = labels[i], capsize=3)
 # plt.xlabel("QPS")

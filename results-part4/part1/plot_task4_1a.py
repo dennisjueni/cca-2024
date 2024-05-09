@@ -2,7 +2,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-MEASURE_DIR = "./results-part4/part1/final_run_a/"
+MEASURE_DIR = "./results-part4/part1/final_run/"
 QPS_MIN = 0
 QPS_MAX = 130_000
 fig = plt.figure(figsize=(16, 9))
