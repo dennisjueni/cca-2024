@@ -5,7 +5,7 @@ if command -v docker &> /dev/null; then
 else
     # Add Docker's official GPG key:
     sudo apt-get update -y
-    sudo apt-get install ca-certificates curl -y
+    sudo apt-get install ca-certificates curl --no-install-recommends -y
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc

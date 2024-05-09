@@ -96,11 +96,20 @@ def run_part1():
 
                     time.sleep(200)
 
+
     finally:
         print("Part 1 done")
 
 
 def run_part2():
+    memcached_name = None
+    for line in get_node_info():
+        if line[0].startswith(MEMCACHED):
+            memcached_name = line[0]
+            break
+    if memcached_name is None:
+        logger.error("Could not find the memcached node")
+        sys.exit(1)
     try:
         base_log_dir = os.path.join(".", "results-part4", "part2", time.strftime("%Y-%m-%d-%H-%M"))
         os.makedirs(base_log_dir, exist_ok=True)
@@ -120,9 +129,20 @@ def run_part2():
         start_memcached_controller()
 
         print("FINISHED STARTING MEMCACHED CONTROLLER")
+        # Copy the logs before sleeping, so that we can start evaluating as soon as the mcperf logs are there
+        # At this point the logs should be complete, since mcperf has been logged as "ended"
+        res = ssh_command(memcached_name, "ls")
+        files = res.stdout.decode("utf-8").split("\n")
+        files = [f for f in files if f.startswith("log") and f.endswith(".txt")]
+        for f in files:
+            copy_file_from_node(memcached_name, f"~/{f}", os.path.join(base_log_dir, f"{f.rstrip('.txt')}.txt"))
 
         # A safety to wait for mcperf to finish
         time.sleep(1000)
+        
+        # Copy the logs again. Can probably be removed, as the logs should already be complete on the first copy
+        for f in files:
+            copy_file_from_node(memcached_name, f"~/{f}", os.path.join(base_log_dir, f"{f.rstrip('.txt')}_final.txt"))
     finally:
         stop_comand = "sudo docker stop $(docker ps -a -q)"
         remove_command = "sudo docker rm -f $(docker ps -a -q)"

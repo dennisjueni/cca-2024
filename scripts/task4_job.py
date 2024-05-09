@@ -60,6 +60,12 @@ class ControllerJob:
             self.logger.job_end(self.job)
 
         return has_finished
+    
+    def is_running(self) -> bool:
+        self.container.reload()
+        is_running = self.container.status.lower().startswith("running")
+
+        return is_running
 
     def get_cores(self) -> list[int]:
         return self.cpu_cores
@@ -92,7 +98,7 @@ class ControllerJob:
         self.container.remove()
 
     def update_cores(self, cores: list[int]) -> None:
-        if str(cores) == str(self.cpu_cores) or self.has_finished():
+        if str(cores) == str(self.cpu_cores) or not self.is_running():
             return
         logger.info(f"Updating {str(self)} container with cores {cores}")
         self.cpu_cores = cores
