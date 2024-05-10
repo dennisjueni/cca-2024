@@ -74,33 +74,41 @@ class Controller:
 
     def is_memcached_overloaded(self, cpu_threshold) -> bool:
         cpu_percent = psutil.cpu_percent(percpu=True)
+        self.logger.custom_event(JobEnum.SCHEDULER, comment="is_overloaded: " + str(cpu_percent))
+
+        if cpu_percent[0] == 0 or (self.num_memcached_cores == 2 and cpu_percent[1] == 0):
+            return False
 
         if self.num_memcached_cores == 1:
             self.measurement_list.append(cpu_percent[0])
         else:
             self.measurement_list.append(cpu_percent[0] + cpu_percent[1])
 
-        if len(self.measurement_list) < 5:
+        if len(self.measurement_list) < 10:
             return False
 
         return sum(self.measurement_list) / len(self.measurement_list) > cpu_threshold
 
     def is_memcached_underloaded(self, cpu_threshold) -> bool:
         cpu_percent = psutil.cpu_percent(percpu=True)
+        self.logger.custom_event(JobEnum.SCHEDULER, comment="is_underloaded: " + str(cpu_percent))
+
+        if cpu_percent[0] == 0 or (self.num_memcached_cores == 2 and cpu_percent[1] == 0):
+            return False
 
         if self.num_memcached_cores == 1:
             self.measurement_list.append(cpu_percent[0])
         else:
             self.measurement_list.append(cpu_percent[0] + cpu_percent[1])
 
-        if len(self.measurement_list) < 5:
+        if len(self.measurement_list) < 10:
             return False
 
         return sum(self.measurement_list) / len(self.measurement_list) < cpu_threshold
 
     def schedule_loop(self):
         OVERLOADED_THRESHOLD = 40
-        UNDERLOADED_THRESHOLD = 40
+        UNDERLOADED_THRESHOLD = 90
 
         current_job = self.jobs.pop(0)
         current_job.start_container()
