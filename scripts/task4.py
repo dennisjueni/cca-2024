@@ -148,6 +148,8 @@ def run_part2():
             if line[0].startswith(MEMCACHED):
                 ssh_command(line[0], stop_comand)
                 ssh_command(line[0], remove_command)
+            if line[0].startswith("client-agent") or line[0].startswith("client-measure"):
+                ssh_command(line[0], "sudo pkill mcperf")
 
 
 def start_memcached_controller():
@@ -255,10 +257,6 @@ def start_mcperf(agent_command: str, measure_command: str, log_results: str):
     if client_agent_name is None or client_measure_name is None or memcached_ip is None or client_agent_ip is None:
         print("Could not find client-agent-name, client-measure, or memcached node")
         sys.exit(1)
-
-    # make sure that no instance of mcperf is running
-    ssh_command(client_measure_name, "sudo pkill mcperf")
-    ssh_command(client_agent_name, "sudo pkill mcperf")
 
     log_agent_file = open(os.path.join(log_results, "mcperf_agent.txt"), "w")
     ssh_command(client_agent_name, agent_command, is_async=True, file=log_agent_file)  # type: ignore
