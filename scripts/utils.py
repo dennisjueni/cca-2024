@@ -255,7 +255,6 @@ def copy_file_to_node(node: str, source_path: str, destination_path: str) -> Non
     run_command(copy_command, dict(os.environ))
 
 
-# copy from node is EXPERIMENTAL!!!
 def copy_file_from_node(node: str, source_path: str, destination_path: str) -> None:
 
     print(f"Copying file {source_path} to node {node}")

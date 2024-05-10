@@ -6,8 +6,7 @@ from datetime import timedelta
 import numpy as np
 import matplotlib.pyplot as plt
 
-BASE_DIR = "./results-part4/part2/2024-05-10-09-28"
-
+BASE_DIR = "./results-part4/part2/2024-05-10-09-51"
 time_format = "%Y-%m-%dT%H:%M:%S.%Z"
 file = open(os.path.join(BASE_DIR, "log.txt"), "r")
 lines = file.read().splitlines()

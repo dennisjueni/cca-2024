@@ -125,12 +125,12 @@ def run_part2():
         time.sleep(20)
 
         start_memcached_controller()
-
         # After 1000 seconds, the memcached controller should be finished and additionally the mcperf command should have finished as well
         while True:
             time.sleep(10)
             if time.time() - start_time > 1010:
                 break
+            logger.info(f"{1000 - (time.time() - start_time)} seconds remaining")
 
         res = ssh_command(memcached_name, "ls")
         files = res.stdout.decode("utf-8").split("\n")  # type: ignore
