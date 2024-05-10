@@ -114,7 +114,7 @@ def run_part2():
         install_memcached(num_threads=2)
         install_docker()
 
-        install_mcperf(False)  # install dynamic mcperf on agent and measure
+        install_mcperf(False)
 
         mcperf_time = 900
 
@@ -127,7 +127,8 @@ def run_part2():
         time.sleep(5)
 
         start_memcached_controller()
-        # After 1000 seconds, the memcached controller should be finished and additionally the mcperf command should have finished as well
+
+        # After mcperf_time seconds, the memcached controller should be finished and additionally the mcperf command should have finished as well
         while True:
             time.sleep(10)
             if time.time() - start_time > mcperf_time + 10:

@@ -1,10 +1,7 @@
-from typing import List
 from loguru import logger
-import psutil
 from task4_scheduler_logger import SchedulerLogger
-from task4_config import DOCKERIMAGES, NR_THREADS, JobEnum
+from task4_config import CPU_CORES, DOCKERIMAGES, NR_THREADS, JobEnum
 import docker.models.containers
-import random
 from docker.client import DockerClient
 
 class ControllerJob:
@@ -16,12 +13,8 @@ class ControllerJob:
 
         self.image = DOCKERIMAGES[job]
         self.nr_threads = NR_THREADS[job]
+        self.cpu_cores = CPU_CORES[job]
         self.is_paused = False
-
-        if self.nr_threads == 2:
-            self.cpu_cores = [2, 3]
-        else:
-            self.cpu_cores = [1, 2, 3]
 
         self.container: docker.models.containers.Container
 

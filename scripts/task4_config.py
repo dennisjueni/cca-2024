@@ -28,13 +28,23 @@ DOCKERIMAGES = {
 }
 
 NR_THREADS = {
-    JobEnum.BLACKSCHOLES: 3,
-    JobEnum.CANNEAL: 3,
-    JobEnum.DEDUP: 3,
-    JobEnum.FERRET: 3,
-    JobEnum.FREQMINE: 3,
-    JobEnum.RADIX: 2,
-    JobEnum.VIPS: 3,
+    JobEnum.BLACKSCHOLES: 4,
+    JobEnum.CANNEAL: 4,
+    JobEnum.DEDUP: 4,
+    JobEnum.FERRET: 4,
+    JobEnum.FREQMINE: 4,
+    JobEnum.RADIX: 4,
+    JobEnum.VIPS: 4,
+}
+
+CPU_CORES = {
+    JobEnum.BLACKSCHOLES: [2, 3],
+    JobEnum.CANNEAL: [2, 3],
+    JobEnum.DEDUP: [2, 3],
+    JobEnum.FERRET: [2, 3],
+    JobEnum.FREQMINE: [2, 3],
+    JobEnum.RADIX: [2, 3],
+    JobEnum.VIPS: [2, 3],
 }
 
 sudo_command = f"sudo usermod -a -G docker {USER}"

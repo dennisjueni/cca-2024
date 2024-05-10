@@ -125,8 +125,8 @@ class Controller:
                 current_job = self.jobs.pop(0)
                 current_job.start_container()
 
-                if self.num_memcached_cores != 1:
-                    current_job.update_cores([2, 3])
+                if self.num_memcached_cores == 1:
+                    current_job.update_cores([1, 2, 3])
             else:
                 if self.num_memcached_cores == 1 and self.is_memcached_overloaded(OVERLOADED_THRESHOLD):
                     self.set_memcached_cores([0, 1])
