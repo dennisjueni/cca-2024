@@ -1,0 +1,14 @@
+Local QPS = 50575.7 (45518092 / 900.0s) - 45518092.0, 0.0
+#type       avg     std     min      p5     p10     p50     p67     p75     p80     p85     p90     p95     p99    p999   p9999 QPS
+read      368.8   151.0   160.7   226.4   245.7   366.4   399.6   418.0   430.4   446.5   466.7   501.8   602.1  1859.3  5674.1  50575.7
+
+Recommendation: To check for possible causes of SSH connectivity issues and get
+recommendations, rerun the ssh command with the --troubleshoot option.
+
+gcloud compute ssh client-agent-k3l4 --project=cca-eth-2024-group-076 --zone=europe-west3-a --ssh-key-file=/home/enothum/.ssh/cloud-computing --troubleshoot
+
+Or, to investigate an IAP tunneling issue:
+
+gcloud compute ssh client-agent-k3l4 --project=cca-eth-2024-group-076 --zone=europe-west3-a --ssh-key-file=/home/enothum/.ssh/cloud-computing --troubleshoot --tunnel-through-iap
+
+ERROR: (gcloud.compute.ssh) [/usr/bin/ssh] exited with return code [255].
