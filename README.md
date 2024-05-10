@@ -72,3 +72,7 @@ poetry run delete_cluster
     First, find the place where poetry created the venv. (Should be in the project root if `poetry config virtualenvs.in-project true`)
     You can do that using this command when inside of the poetry shell: `bash poetry env info -p`
     Then simply select this as Python interpreter path in VSCode
+
+
+# TODO
+- Coschedule RADIX with Memcached (bc almost no interference)

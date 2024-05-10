@@ -11,7 +11,7 @@ labels = {0: "1 core, 1 thread", 1: "1 core, 2 threads", 2: "2 cores, 1 thread",
 
 suffix = {0: "1C_1T", 1: "1C_2T", 2: "2C_1T", 3: "2C_2T"}
 
-colors = ["#CCA000", "#0CCA00", "#CC0A00", "#f06eee"]
+colors = ["#AACCCA", "#00CCA0", "#CC0A00", "#f06eee"]
 
 for i in range(4):
     qps = []
@@ -48,9 +48,19 @@ for i in range(4):
         ys.append(np.mean(groups_y[key]))
         xerr.append(np.std(groups_x[key]))
         yerr.append(np.std(groups_y[key]))
-
+    marker_styles = ["o", "v", "^", "<", ">"]
     xs, ys, xerr, yerr = zip(*list(sorted(list(zip(xs, ys, xerr, yerr)))))
-    plt.errorbar(xs, ys, xerr=xerr, yerr=yerr, label=labels[i], capsize=3, color=colors[i])
+    plt.errorbar(
+        xs,
+        ys,
+        xerr=xerr,
+        yerr=yerr,
+        label=labels[i],
+        capsize=3,
+        color=colors[i],
+        marker=marker_styles[i],
+        markersize=10,
+    )
 
 
 plt.xlabel("QPS")
@@ -58,6 +68,7 @@ plt.ylabel("P95 latency (ms)")
 plt.hlines(1, xmin=QPS_MIN, xmax=QPS_MAX, color="k", linestyles="--")
 plt.xlim(QPS_MIN, QPS_MAX)
 plt.legend()
+plt.grid(True)
 
 plt.title("P95 latency plotted against running memcached with different number of cores and threads")
 

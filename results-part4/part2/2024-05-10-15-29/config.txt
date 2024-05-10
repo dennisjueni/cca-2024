@@ -1,5 +1,5 @@
 """
-This python script should run alongside `memcached` on 
+!!!THIS WAS RUN WITH INTERVAL=5!!!
 """
 
 import time

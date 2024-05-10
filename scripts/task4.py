@@ -116,8 +116,10 @@ def run_part2():
 
         install_mcperf(False)  # install dynamic mcperf on agent and measure
 
+        mcperf_time = 900
+
         agent_command = "./memcache-perf-dynamic/mcperf -T 16 -A"
-        measure_command = "./memcache-perf-dynamic/mcperf -s MEMCACHED_IP --loadonly && ./memcache-perf-dynamic/mcperf -s MEMCACHED_IP -a AGENT_IP --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 900 --qps_interval 10 --qps_min 5000 --qps_max 100000"
+        measure_command = f"./memcache-perf-dynamic/mcperf -s MEMCACHED_IP --loadonly && ./memcache-perf-dynamic/mcperf -s MEMCACHED_IP -a AGENT_IP --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t {mcperf_time} --qps_interval 5 --qps_min 5000 --qps_max 100000 --qps_seed 3274"
 
         start_mcperf(agent_command=agent_command, measure_command=measure_command, log_results=base_log_dir)
         start_time = time.time()
@@ -128,9 +130,9 @@ def run_part2():
         # After 1000 seconds, the memcached controller should be finished and additionally the mcperf command should have finished as well
         while True:
             time.sleep(10)
-            if time.time() - start_time > 1010:
+            if time.time() - start_time > mcperf_time + 10:
                 break
-            logger.info(f"{1000 - (time.time() - start_time)} seconds remaining")
+            logger.info(f"{mcperf_time - (time.time() - start_time)} seconds remaining")
 
         res = ssh_command(memcached_name, "ls")
         files = res.stdout.decode("utf-8").split("\n")  # type: ignore

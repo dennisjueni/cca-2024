@@ -131,7 +131,7 @@ class Controller:
                 if self.num_memcached_cores == 1 and self.is_memcached_overloaded(OVERLOADED_THRESHOLD):
                     self.set_memcached_cores([0, 1])
                     current_job.update_cores([2, 3])
-                    time.sleep(0.9)
+                    time.sleep(2.5)
 
                 elif self.num_memcached_cores == 2 and self.is_memcached_underloaded(UNDERLOADED_THRESHOLD):
                     self.set_memcached_cores([0])
