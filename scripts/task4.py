@@ -117,7 +117,7 @@ def run_part2():
         install_mcperf(False)  # install dynamic mcperf on agent and measure
 
         agent_command = "./memcache-perf-dynamic/mcperf -T 16 -A"
-        measure_command = "./memcache-perf-dynamic/mcperf -s MEMCACHED_IP --loadonly && ./memcache-perf-dynamic/mcperf -s MEMCACHED_IP -a AGENT_IP --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 1000 --qps_interval 10 --qps_min 5000 --qps_max 100000"
+        measure_command = "./memcache-perf-dynamic/mcperf -s MEMCACHED_IP --loadonly && ./memcache-perf-dynamic/mcperf -s MEMCACHED_IP -a AGENT_IP --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 900 --qps_interval 10 --qps_min 5000 --qps_max 100000"
 
         start_mcperf(agent_command=agent_command, measure_command=measure_command, log_results=base_log_dir)
         start_time = time.time()

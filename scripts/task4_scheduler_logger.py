@@ -49,7 +49,7 @@ class SchedulerLogger:
         self._log("unpause", job)
 
     def custom_event(self, job: JobEnum, comment: str):
-        self._log("custom", job, urllib.parse.quote_plus(comment))
+        self._log("custom", job, comment)
 
     def end(self) -> None:
         self._log("end", JobEnum.SCHEDULER)

@@ -15,7 +15,7 @@ else
 
     # Install Docker:
     sudo apt-get update -y
-    sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+    sudo apt-get install docker-ce docker-ce-cli containerd.io --no-install-recommends -y
 
     sudo systemctl start docker 
     sudo systemctl enable docker 
