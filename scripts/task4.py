@@ -122,7 +122,7 @@ def run_part2():
         start_mcperf(agent_command=agent_command, measure_command=measure_command, log_results=base_log_dir)
         start_time = time.time()
 
-        time.sleep(20)
+        time.sleep(5)
 
         start_memcached_controller()
         # After 1000 seconds, the memcached controller should be finished and additionally the mcperf command should have finished as well
@@ -137,6 +137,9 @@ def run_part2():
         files = [f for f in files if f.startswith("log") and f.endswith(".txt")]
         for f in files:
             copy_file_from_node(memcached_name, f"~/{f}", os.path.join(base_log_dir, "log.txt"))
+
+        file_path = os.path.dirname(os.path.realpath(__file__))
+        subprocess.run(f"python3 {file_path}/../results-part4/part2/plot_task4.py {base_log_dir}".split())
 
     finally:
         stop_comand = "sudo docker stop $(docker ps -a -q)"
@@ -160,13 +163,13 @@ def start_memcached_controller():
         logger.error("Could not find the controller node")
         sys.exit(1)
 
-    ssh_command(memcached_name, "python3 ~/task4_controller.py")
+    ssh_command(memcached_name, "taskset -c 2,3 python3 ~/task4_controller.py")
 
     logger.success(f"Finished running memcached controller on {memcached_name}")
 
 
 def copy_task4(files: list[str]):
-    requirements_path = "requirements_part4.txt"
+    requirements_file_name = "requirements_part4.txt"
 
     source_folder = os.path.join(".", "scripts")
     destination = os.path.join("~")
@@ -177,12 +180,13 @@ def copy_task4(files: list[str]):
                 source_file = os.path.join(source_folder, file_name)
                 copy_file_to_node(line[0], source_file, destination)
 
-            copy_file_to_node(line[0], requirements_path, destination)
+            requirements_file = os.path.join(source_folder, requirements_file_name)
+            copy_file_to_node(line[0], requirements_file, destination)
 
             logger.info(f"Copied python scripts to {line[0]}")
 
             ssh_command(line[0], f"sudo apt install python3-pip -y")
-            ssh_command(line[0], f"pip install -r {requirements_path}")
+            ssh_command(line[0], f"pip install -r {requirements_file_name}")
 
             logger.success(f"Installed requirements to {line[0]}")
 

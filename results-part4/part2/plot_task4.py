@@ -6,7 +6,19 @@ from datetime import timedelta
 import numpy as np
 import matplotlib.pyplot as plt
 
-BASE_DIR = "./results-part4/part2/2024-05-10-09-51"
+if len(sys.argv) > 1:
+    BASE_DIR = sys.argv[1]
+else:
+    # This just takes the newest subfolder!
+    main_folder_path = "./results-part4/part2"
+    subfolders = [
+        os.path.join(main_folder_path, f)
+        for f in os.listdir(main_folder_path)
+        if os.path.isdir(os.path.join(main_folder_path, f))
+    ]
+    subfolders.sort()
+    BASE_DIR = subfolders[-1]
+
 time_format = "%Y-%m-%dT%H:%M:%S.%Z"
 file = open(os.path.join(BASE_DIR, "log.txt"), "r")
 lines = file.read().splitlines()

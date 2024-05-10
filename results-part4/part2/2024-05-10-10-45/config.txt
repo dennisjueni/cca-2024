@@ -1,0 +1,36 @@
+def schedule_loop(self):
+    UNDERLOADED_THRESHOLD = 100
+    OVERLOADED_THRESHOLD = 80
+
+    current_job = self.jobs.pop(0)
+    current_job.start_container()
+
+    while True:
+        curr_job_finished = current_job.is_finished()
+
+        if curr_job_finished:
+            if len(self.jobs) == 0:
+                # This means we have finished all jobs and we can thus break the loop and let memcached run alone
+                self.set_memcached_cores([0, 1])
+                break
+
+            # This means we can start the next job in the list and run it optimistically on 3 cores
+            current_job = self.jobs.pop(0)
+            current_job.start_container()
+
+            if self.num_memcached_cores != 1:
+                current_job.update_cores([2, 3])
+        else:
+            if self.num_memcached_cores == 1 and self.is_memcached_overloaded(OVERLOADED_THRESHOLD):
+                # Give memcached more cores if overloaded (cpu_load0 > OVERLOADED_THRESHOLD)
+                self.set_memcached_cores([0, 1])
+                current_job.update_cores([2, 3])
+
+            elif self.num_memcached_cores == 2 and self.is_memcached_underloaded(UNDERLOADED_THRESHOLD):
+                self.set_memcached_cores([0])
+                current_job.update_cores([1, 2, 3])
+
+        time.sleep(0.1)
+
+    time.sleep(70)
+    self.logger.job_end(JobEnum.MEMCACHED)

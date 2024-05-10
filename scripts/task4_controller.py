@@ -33,17 +33,17 @@ class Controller:
         self.client: DockerClient = docker.from_env()
         self.jobs: list[ControllerJob] = []
         self.memcached_pid = memcached_pid()
-        self.num_memcached_cores = 1
+        self.num_memcached_cores = 2
         self.logger = SchedulerLogger()
 
     def start_controlling(self):
         # Start memcached on core 0, do not use the set_memcached_cores function since we do not want to log the update_cores here
-        self.logger.job_start(JobEnum.MEMCACHED, initial_cores=[0], initial_threads=2)
-        taskset_command = f"sudo taskset -a -c 0 -p {self.memcached_pid}"
+        self.logger.job_start(JobEnum.MEMCACHED, initial_cores=[0, 1], initial_threads=2)
+        taskset_command = f"sudo taskset -a -c 0,1 -p {self.memcached_pid}"
         subprocess.run(taskset_command.split())
 
         self.create_jobs()
-        self.schedule_loop_alex()
+        self.schedule_loop()
 
     def set_memcached_cores(self, cores: list[int]):
         if len(cores) == self.num_memcached_cores:
@@ -81,7 +81,8 @@ class Controller:
         return not self.is_memcached_overloaded(cpu_threshold)
 
     def schedule_loop(self):
-        LOAD_THRESHOLD = 60
+        OVERLOADED_THRESHOLD = 40
+        UNDERLOADED_THRESHOLD = 40
 
         current_job = self.jobs.pop(0)
         current_job.start_container()
@@ -95,43 +96,7 @@ class Controller:
                     self.set_memcached_cores([0, 1])
                     break
 
-                # This means we can start the next job in the list and run it optimistically on 3 cores
-                current_job = self.jobs.pop(0)
-                current_job.start_container()
-
-                if self.num_memcached_cores != 1:
-                    current_job.update_cores([2, 3])
-            else:
-                if self.num_memcached_cores == 1 and self.is_memcached_overloaded(LOAD_THRESHOLD):
-                    # Give memcached more cores if overloaded (cpu_load0 > OVERLOADED_THRESHOLD)
-                    self.set_memcached_cores([0, 1])
-                    current_job.update_cores([2, 3])
-
-                elif self.num_memcached_cores == 2 and self.is_memcached_underloaded(LOAD_THRESHOLD):
-                    self.set_memcached_cores([0])
-                    current_job.update_cores([1, 2, 3])
-
-            time.sleep(0.1)
-
-        time.sleep(70)
-        self.logger.job_end(JobEnum.MEMCACHED)
-
-    def schedule_loop_alex(self):
-        OVERLOADED_THRESHOLD = 75 # higher means more load on memcached required until we go to 2 cores
-        UNDERLOADED_THRESHOLD = 45  # lower means remove extra memcached core when total load is lower
-
-        current_job = self.jobs.pop(0)
-        current_job.start_container()
-
-        while True:
-            curr_job_finished = current_job.is_finished()
-
-            if curr_job_finished:
-                if len(self.jobs) == 0:
-                    # This means we have finished all jobs and we can thus break the loop and let memcached run alone
-                    break
-
-                # This means we can start the next job in the list and run it optimistically on 3 cores
+                # This means we can start the next job in the list and run it
                 current_job = self.jobs.pop(0)
                 current_job.start_container()
 
@@ -144,11 +109,10 @@ class Controller:
                     current_job.update_cores([2, 3])
 
                 elif self.num_memcached_cores == 2 and self.is_memcached_underloaded(UNDERLOADED_THRESHOLD):
-                    # Remove extra memcached core if underloaded (cpu_load0 + cpu_load1 < UNDERLOADED_THRESHOLD)
                     self.set_memcached_cores([0])
                     current_job.update_cores([1, 2, 3])
 
-            time.sleep(0.25 / 10)
+            time.sleep(0.1)
 
         time.sleep(70)
         self.logger.job_end(JobEnum.MEMCACHED)
