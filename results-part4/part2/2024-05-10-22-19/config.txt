@@ -1,5 +1,5 @@
 """
-This python script should run alongside `memcached` on 
+All jobs on 3 threads
 """
 
 import time
@@ -106,24 +106,14 @@ class Controller:
         return sum(self.measurement_list) / len(self.measurement_list) < cpu_threshold
 
     def schedule_loop(self):
-        OVERLOADED_THRESHOLD = 40
-        UNDERLOADED_THRESHOLD = 70
-
-        radix_job = None
-        for job in self.jobs:
-            if job.job == JobEnum.RADIX:
-                radix_job = job
-                self.jobs.remove(job)
-                job.cpu_cores = [0,1]
-                job.start_container()
+        OVERLOADED_THRESHOLD = 60
+        UNDERLOADED_THRESHOLD = 85
 
         current_job = self.jobs.pop(0)
         current_job.start_container()
-        current_job.update_cores([2, 3])
 
         while True:
             curr_job_finished = current_job.is_finished()
-            radix_job_finished = radix_job.is_finished()
 
             if curr_job_finished:
                 if len(self.jobs) == 0:
@@ -135,18 +125,16 @@ class Controller:
                 current_job = self.jobs.pop(0)
                 current_job.start_container()
 
-                if not radix_job_finished or self.num_memcached_cores != 1:
-                    current_job.update_cores([2, 3])
+                if self.num_memcached_cores == 1:
+                    current_job.update_cores([1, 2, 3])
             else:
                 if self.num_memcached_cores == 1 and self.is_memcached_overloaded(OVERLOADED_THRESHOLD):
                     self.set_memcached_cores([0, 1])
                     current_job.update_cores([2, 3])
-                    time.sleep(0.9)
 
                 elif self.num_memcached_cores == 2 and self.is_memcached_underloaded(UNDERLOADED_THRESHOLD):
-                    if radix_job_finished:
-                        self.set_memcached_cores([0])
-                        current_job.update_cores([1, 2, 3])
+                    self.set_memcached_cores([0])
+                    current_job.update_cores([1, 2, 3])
 
             time.sleep(0.1)
 
