@@ -10,6 +10,7 @@ from docker.client import DockerClient
 import psutil
 import subprocess
 from loguru import logger
+from collections import deque
 
 from task4_scheduler_logger import SchedulerLogger
 from task4_job import ControllerJob
@@ -35,6 +36,7 @@ class Controller:
         self.memcached_pid = memcached_pid()
         self.num_memcached_cores = 2
         self.logger = SchedulerLogger()
+        self.measurement_list = deque(maxlen=10)
 
     def start_controlling(self):
         # Start memcached on core 0, do not use the set_memcached_cores function since we do not want to log the update_cores here
@@ -48,6 +50,7 @@ class Controller:
     def set_memcached_cores(self, cores: list[int]):
         if len(cores) == self.num_memcached_cores:
             return
+        self.measurement_list.clear()
         self.num_memcached_cores = len(cores)
         taskset_command = f"sudo taskset -a -c {','.join(list(map(str, cores)))} -p {self.memcached_pid}"
         subprocess.run(taskset_command.split())
@@ -73,12 +76,27 @@ class Controller:
         cpu_percent = psutil.cpu_percent(percpu=True)
 
         if self.num_memcached_cores == 1:
-            return cpu_percent[0] > cpu_threshold
+            self.measurement_list.append(cpu_percent[0])
+        else:
+            self.measurement_list.append(cpu_percent[0] + cpu_percent[1])
 
-        return cpu_percent[0] + cpu_percent[1] > cpu_threshold
+        if len(self.measurement_list) < 5:
+            return False
+
+        return sum(self.measurement_list) / len(self.measurement_list) > cpu_threshold
 
     def is_memcached_underloaded(self, cpu_threshold) -> bool:
-        return not self.is_memcached_overloaded(cpu_threshold)
+        cpu_percent = psutil.cpu_percent(percpu=True)
+
+        if self.num_memcached_cores == 1:
+            self.measurement_list.append(cpu_percent[0])
+        else:
+            self.measurement_list.append(cpu_percent[0] + cpu_percent[1])
+
+        if len(self.measurement_list) < 5:
+            return False
+
+        return sum(self.measurement_list) / len(self.measurement_list) < cpu_threshold
 
     def schedule_loop(self):
         OVERLOADED_THRESHOLD = 40
@@ -104,7 +122,6 @@ class Controller:
                     current_job.update_cores([2, 3])
             else:
                 if self.num_memcached_cores == 1 and self.is_memcached_overloaded(OVERLOADED_THRESHOLD):
-                    # Give memcached more cores if overloaded (cpu_load0 > OVERLOADED_THRESHOLD)
                     self.set_memcached_cores([0, 1])
                     current_job.update_cores([2, 3])
 
