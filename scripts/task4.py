@@ -46,11 +46,7 @@ def run_part1():
             logger.error("Could not find the memcached node")
             sys.exit(1)
 
-        source_folder = os.path.join(".", "scripts")
-        source_file = os.path.join(source_folder, "task4_cpu.py")
-        copy_file_to_node(memcached_name, source_file, os.path.join("~"))
-        ssh_command(memcached_name, f"sudo apt install python3-pip -y")
-        ssh_command(memcached_name, f"pip install psutil")
+        copy_task4(["task4_cpu.py"])
 
         num_thread_candidates = [2, 1]
         cores_candidates = [[1, 2], [1]]
@@ -96,7 +92,6 @@ def run_part1():
 
                     time.sleep(200)
 
-
     finally:
         print("Part 1 done")
 
@@ -110,10 +105,12 @@ def run_part2():
     if memcached_name is None:
         logger.error("Could not find the memcached node")
         sys.exit(1)
+
+    base_log_dir = os.path.join(".", "results-part4", "part2", time.strftime("%Y-%m-%d-%H-%M"))
+    os.makedirs(base_log_dir, exist_ok=True)
+
     try:
-        base_log_dir = os.path.join(".", "results-part4", "part2", time.strftime("%Y-%m-%d-%H-%M"))
-        os.makedirs(base_log_dir, exist_ok=True)
-        copy_task4()
+        copy_task4(["task4_controller.py", "task4_scheduler_logger.py", "task4_job.py", "task4_config.py"])
         install_memcached(num_threads=2)
         install_docker()
 
@@ -123,26 +120,24 @@ def run_part2():
         measure_command = "./memcache-perf-dynamic/mcperf -s MEMCACHED_IP --loadonly && ./memcache-perf-dynamic/mcperf -s MEMCACHED_IP -a AGENT_IP --noload -T 16 -C 4 -D 4 -Q 1000 -c 4 -t 1000 --qps_interval 10 --qps_min 5000 --qps_max 100000"
 
         start_mcperf(agent_command=agent_command, measure_command=measure_command, log_results=base_log_dir)
+        start_time = time.time()
 
         time.sleep(20)
 
         start_memcached_controller()
 
-        print("FINISHED STARTING MEMCACHED CONTROLLER")
-        # Copy the logs before sleeping, so that we can start evaluating as soon as the mcperf logs are there
-        # At this point the logs should be complete, since mcperf has been logged as "ended"
+        # After 1000 seconds, the memcached controller should be finished and additionally the mcperf command should have finished as well
+        while True:
+            time.sleep(10)
+            if time.time() - start_time > 1010:
+                break
+
         res = ssh_command(memcached_name, "ls")
-        files = res.stdout.decode("utf-8").split("\n")
+        files = res.stdout.decode("utf-8").split("\n")  # type: ignore
         files = [f for f in files if f.startswith("log") and f.endswith(".txt")]
         for f in files:
-            copy_file_from_node(memcached_name, f"~/{f}", os.path.join(base_log_dir, f"{f.rstrip('.txt')}.txt"))
+            copy_file_from_node(memcached_name, f"~/{f}", os.path.join(base_log_dir, "log.txt"))
 
-        # A safety to wait for mcperf to finish
-        time.sleep(1000)
-        
-        # Copy the logs again. Can probably be removed, as the logs should already be complete on the first copy
-        for f in files:
-            copy_file_from_node(memcached_name, f"~/{f}", os.path.join(base_log_dir, f"{f.rstrip('.txt')}_final.txt"))
     finally:
         stop_comand = "sudo docker stop $(docker ps -a -q)"
         remove_command = "sudo docker rm -f $(docker ps -a -q)"
@@ -167,26 +162,22 @@ def start_memcached_controller():
 
     ssh_command(memcached_name, "python3 ~/task4_controller.py")
 
-    logger.success(f"Started memcached controller on {memcached_name}")
+    logger.success(f"Finished running memcached controller on {memcached_name}")
 
 
-def copy_task4():
+def copy_task4(files: list[str]):
     requirements_path = "requirements_part4.txt"
-    utils_path = "utils.py"
 
     source_folder = os.path.join(".", "scripts")
     destination = os.path.join("~")
 
     for line in get_node_info():
         if line[0].startswith(MEMCACHED):
-            for file_name in os.listdir(source_folder):
-                if (
-                    (file_name.startswith("task4_") and file_name.endswith(".py"))
-                    or (file_name == utils_path)
-                    or (file_name == requirements_path)
-                ):
-                    source_file = os.path.join(source_folder, file_name)
-                    copy_file_to_node(line[0], source_file, destination)
+            for file_name in files:
+                source_file = os.path.join(source_folder, file_name)
+                copy_file_to_node(line[0], source_file, destination)
+
+            copy_file_to_node(line[0], requirements_path, destination)
 
             logger.info(f"Copied python scripts to {line[0]}")
 

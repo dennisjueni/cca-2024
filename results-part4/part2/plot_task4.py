@@ -1,21 +1,18 @@
-import json
+import os
 import sys
 from datetime import datetime
-import pandas as pd
 from matplotlib.patches import Patch
 from datetime import timedelta
 import numpy as np
+import matplotlib.pyplot as plt
 
-LOG_FILE = "./results-part4/first_result/log.txt"
-P95_FILE = "./results-part4/first_result/mcperf.txt"
+BASE_DIR = "./results-part4/part2/2024-05-10-09-28"
 
 time_format = "%Y-%m-%dT%H:%M:%S.%Z"
-file = open(LOG_FILE, "r")
+file = open(os.path.join(BASE_DIR, "log.txt"), "r")
 lines = file.read().splitlines()
 MAX_LEN = 1000
 runs = []  # (start, finish, name, machine, color, cores)
-# df = pd.DataFrame([], columns=['start', 'finish', 'name', 'machine'])
-# print(df)
 
 c_dict = {
     "parsec-blackscholes": "#CCA000",
@@ -42,11 +39,8 @@ for line in lines:
         continue
 
     if event == "start":
-        print(line.split())
         cores = line.split()[3][1:-1].split(",")
         start_events[name] = time, cores
-
-        print(time, name, cores)
 
     elif event == "unpause":
         prev_time, cores = start_events[name]
@@ -56,7 +50,6 @@ for line in lines:
             start_time, cores = start_events[name]
 
             completion_time = time
-            print(f"Job time {name}: ", completion_time - start_time, start_time)
             completion_times.append(completion_time)
             start_times.append(start_time)
             if name != "memcached":
@@ -69,7 +62,6 @@ for line in lines:
         try:
             start_time, cores = start_events[name]
             completion_time = time
-            print(f"Job time {name}: ", completion_time - start_time, start_time)
             completion_times.append(completion_time)
             start_times.append(start_time)
             if name != "memcached":
@@ -87,18 +79,14 @@ for line in lines:
 
 
 MAX_LEN = (max(completion_times) - min(start_times)).total_seconds()
-print(MAX_LEN)
-import matplotlib.pyplot as plt
 
 legend_elements = [Patch(facecolor=c_dict[i], label=i) for i in c_dict]
 
-# fig = plt.figure(figsize=(16,9))
 
-# axs[0].yaxis.grid(True, which='ma')
 fig, ax1 = plt.subplots(figsize=(20, 9))
 START = min(start_times)
 
-mc_file = open(P95_FILE, "r")
+mc_file = open(os.path.join(BASE_DIR, "mcperf.txt"), "r")
 mc_file = mc_file.read()
 lines = mc_file.splitlines()
 memcache_start = [entry for entry in lines if entry.startswith("Timestamp start")]
@@ -137,15 +125,9 @@ for entry in entries:
     ps.append(float(p95))
     qs.append(float(qps))
     qs.append(float(qps))
-
-    # max_p95 = max(float(p95), max_p95)
-    # max_q = max(float(qps), max_q)
     target = entry[-1]
 ax1.step(xs, ps, color="royalblue")
 ax2.step(xs, qs, color="orange")
-# ax1.bar((start+end)/2, float(p95), width=memcache_delta.total_seconds(), color='royalblue')
-# ax2.bar((start+end)/2, float(qps), width=memcache_delta.total_seconds(), color='royalblue')
-# axs[2].bar((start+end)/2, float(target), width=memcache_delta.total_seconds(), color='royalblue')
 
 
 HEIGHT = 100
@@ -178,11 +160,6 @@ for run in runs:
 ax1.barh(NODE_A_START + 10, MAX_LEN, left=0, color=c_dict["memcached"], height=HEIGHT_NO_OFFSET, align="edge")
 
 
-# Put a legend below current axis
-# axs[0].legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-#           fancybox=True, shadow=True, ncol=5, handles=legend_elements)
-# plt.legend(handles=legend_elements)
-# axs[3].set_ylim([0,1000])
 ax1.set_xlim(0, MAX_LEN + 5)
 
 yticks = list(np.arange(0, 2001, 250))
@@ -215,20 +192,5 @@ ylabels = list(np.arange(0, max_q + 1, 25000))
 ax2.set_yticks(yticks, ylabels)
 ax2.set_ylabel("QPS", color="orange", fontdict={"fontsize": 16})
 ax1.set_xlabel("Time since memcached started [s]", fontdict={"fontsize": 16})
-# perf_file = open(CPU_FILE, 'r')
-# perf_file = perf_file.read()
-# lines = perf_file.splitlines()
-# lines = [line.split() for line in lines]
-# cpu_x = [(datetime.fromisoformat(line[0])-START).total_seconds() for line in lines]
-# for i in range(4):
-#     if i in [0,1]:
-#         axs[2].plot(cpu_x, [float(line[i+1])*1000 for line in lines],alpha=0.8, label=f"CPU {i}")
 
-#     axs[1].plot(cpu_x, [float(line[i+1]) for line in lines],alpha=0.8, label=f"CPU {i}")
-# axs[1].legend()
-# # plt.tight_layout()
-
-# # plt.subplot()
-# plt.xlim(0,200)
-
-plt.savefig(fname=f"test.pdf")
+plt.savefig(fname=f"{BASE_DIR}/plot.pdf")

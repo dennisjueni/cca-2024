@@ -321,8 +321,7 @@ def install_mcperf(check_memcached: bool = True) -> None:
         if line[0].startswith("client-agent") or line[0].startswith("client-measure"):
 
             # First we check if we have already copied the file to the node, if so, we do not do it again
-            # TODO : remains to be checked
-            check_command = f"[ -d \"{mcperf_dynamic_path}\" ]  && echo 'already installed' || echo '-'"
+            check_command = f"test -f {mcperf_dynamic_path} && echo 'already installed' || echo '-'"
             res = ssh_command(
                 line[0],
                 check_command,
