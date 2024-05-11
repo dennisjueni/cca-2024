@@ -1,3 +1,4 @@
+import docker.errors
 from loguru import logger
 from task4_scheduler_logger import SchedulerLogger
 from task4_config import CPU_CORES, DOCKERIMAGES, NR_THREADS, JobEnum
@@ -15,6 +16,7 @@ class ControllerJob:
         self.nr_threads = NR_THREADS[job]
         self.cpu_cores = CPU_CORES[job]
         self.is_paused = False
+        self.thresholds = [None, None]
 
         self.container: docker.models.containers.Container
 
