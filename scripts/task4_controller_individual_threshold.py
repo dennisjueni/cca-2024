@@ -14,7 +14,7 @@ from collections import deque
 
 from task4_scheduler_logger import SchedulerLogger
 from task4_job import ControllerJob
-from task4_config import JobEnum, OVERLOADED_THRESHOLD, UNDERLOADED_THRESHOLD
+from task4_config import JobEnum, OVERLOADED_THRESHOLD, UNDERLOADED_THRESHOLD, THRESHOLDS
 
 
 def memcached_pid() -> str:
@@ -59,12 +59,9 @@ class Controller:
     def job_create(self, job_enum: JobEnum) -> ControllerJob:
         controller_job = ControllerJob(job_enum, client=self.client, logger=self.logger)
 
-        logger.info(f"Creating {str(job_enum)}-container with image: {controller_job.image}")
-
         controller_job.create_container()
 
         self.jobs.append(controller_job)
-        logger.info(f"Created {str(controller_job)} container with id {controller_job.container.short_id}")
         return controller_job
 
     def create_jobs(self):
@@ -72,6 +69,8 @@ class Controller:
             if job == JobEnum.MEMCACHED or job == JobEnum.SCHEDULER:
                 continue
             controller_job = self.job_create(job)
+            if job in THRESHOLDS:
+                controller_job.thresholds = THRESHOLDS[job]
 
     def is_memcached_overloaded(self, cpu_threshold) -> bool:
         cpu_percent = psutil.cpu_percent(percpu=True)
@@ -106,9 +105,6 @@ class Controller:
         return sum(self.measurement_list) / len(self.measurement_list) < cpu_threshold
 
     def schedule_loop(self):
-
-        # THRESHOLDS ARE GLOBAL
-
         current_job: ControllerJob = self.jobs.pop(0)
         current_job.start_container()
 

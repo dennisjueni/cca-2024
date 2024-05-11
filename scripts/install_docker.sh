@@ -4,6 +4,9 @@ if command -v docker &> /dev/null; then
   echo "Docker is installed"
 else
     # Add Docker's official GPG key:
+    # A try
+    echo "\n" | sudo dpkg --configure -a
+
     sudo apt-get update -y
     sudo apt-get install ca-certificates curl --no-install-recommends -y
     sudo install -m 0755 -d /etc/apt/keyrings
