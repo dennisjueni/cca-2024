@@ -1,5 +1,5 @@
 """
-This python script should run alongside `memcached` on 
+The threshold of all jobs were 5000, except dedup and ferret which are set to 4500
 """
 
 import sys

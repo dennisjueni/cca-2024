@@ -1,0 +1,14 @@
+Local QPS = 49137.7 (44223924 / 900.0s) - 44223924.0, 0.0
+#type       avg     std     min      p5     p10     p50     p67     p75     p80     p85     p90     p95     p99    p999   p9999 QPS
+read      359.5   187.2   173.5   221.2   236.3   353.6   386.6   401.1   413.0   426.8   444.4   473.6   634.3  4782.9  5094.4  49137.7
+
+Recommendation: To check for possible causes of SSH connectivity issues and get
+recommendations, rerun the ssh command with the --troubleshoot option.
+
+gcloud compute ssh client-agent-zsfh --project=cca-eth-2024-group-076 --zone=europe-west3-a --ssh-key-file=/Users/dennisjueni/.ssh/cloud-computing --troubleshoot
+
+Or, to investigate an IAP tunneling issue:
+
+gcloud compute ssh client-agent-zsfh --project=cca-eth-2024-group-076 --zone=europe-west3-a --ssh-key-file=/Users/dennisjueni/.ssh/cloud-computing --troubleshoot --tunnel-through-iap
+
+ERROR: (gcloud.compute.ssh) [/usr/bin/ssh] exited with return code [255].

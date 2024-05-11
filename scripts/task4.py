@@ -114,6 +114,9 @@ def run_part2():
         install_memcached(num_threads=2)
         install_docker()
 
+        for docker_image in DOCKERIMAGES.values():
+            ssh_command(memcached_name, f"sudo docker pull {docker_image}")
+
         install_mcperf(False)
 
         mcperf_time = 900
@@ -165,11 +168,13 @@ def start_memcached_controller():
         if line[0].startswith(MEMCACHED):
             memcached_name = line[0]
 
-    if memcached_name is None:
+    memcached_ip = get_node_ip(MEMCACHED)
+
+    if memcached_name is None or memcached_ip is None:
         logger.error("Could not find the controller node")
         sys.exit(1)
 
-    ssh_command(memcached_name, "taskset -c 2,3 python3 ~/task4_controller.py")
+    ssh_command(memcached_name, f"taskset -c 2,3 python3 ~/task4_controller.py {memcached_ip}")
 
     logger.success(f"Finished running memcached controller on {memcached_name}")
 

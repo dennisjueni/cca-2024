@@ -1,7 +1,7 @@
 import docker.errors
 from loguru import logger
 from task4_scheduler_logger import SchedulerLogger
-from task4_config import CPU_CORES, DOCKERIMAGES, NR_THREADS, JobEnum
+from task4_config import CPU_CORES, DOCKERIMAGES, NR_THREADS, THRESHOLDS, JobEnum
 import docker.models.containers
 from docker.client import DockerClient
 
@@ -15,8 +15,8 @@ class ControllerJob:
         self.image = DOCKERIMAGES[job]
         self.nr_threads = NR_THREADS[job]
         self.cpu_cores = CPU_CORES[job]
+        self.threshold = THRESHOLDS[job]
         self.is_paused = False
-        self.thresholds = [None, None]
 
         self.container: docker.models.containers.Container
 
@@ -27,8 +27,6 @@ class ControllerJob:
         return f"./run -a run -S {benchmark_suite} -p {benchmark_name} -i native -n {self.nr_threads}"
 
     def create_container(self) -> docker.models.containers.Container:
-        self.client.images.pull(self.image)
-
         self.container = self.client.containers.create(
             self.image,
             name=self.job.value,

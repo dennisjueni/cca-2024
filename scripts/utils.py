@@ -148,8 +148,6 @@ def get_info(resource_type: str) -> list[list[str]]:
     get_command = ["kubectl", "get", resource_type, "-o", "wide"]
     res = subprocess.run(get_command, env=dict(os.environ), capture_output=True)
 
-    print(res.stdout.decode("utf-8"))
-
     # Split the output into lines and remove the first line (header)
     lines = res.stdout.decode("utf-8").split("\n")[1:]
 

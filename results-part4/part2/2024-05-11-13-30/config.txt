@@ -2,6 +2,8 @@
 This python script should run alongside `memcached` on 
 """
 
+import socket
+import sys
 import time
 import docker
 import docker.models
@@ -9,12 +11,11 @@ import docker.models.containers
 from docker.client import DockerClient
 import psutil
 import subprocess
-from loguru import logger
 from collections import deque
 
 from task4_scheduler_logger import SchedulerLogger
 from task4_job import ControllerJob
-from task4_config import JobEnum, OVERLOADED_THRESHOLD, UNDERLOADED_THRESHOLD, THRESHOLDS
+from task4_config import JobEnum
 
 
 def memcached_pid() -> str:
@@ -30,7 +31,8 @@ def memcached_pid() -> str:
 
 
 class Controller:
-    def __init__(self):
+
+    def __init__(self, memcached_ip: str):
         self.client: DockerClient = docker.from_env()
         self.jobs: list[ControllerJob] = []
         self.memcached_pid = memcached_pid()
@@ -38,12 +40,16 @@ class Controller:
         self.logger = SchedulerLogger()
         self.measurement_list = deque(maxlen=10)
 
+        self.memached_ip = memcached_ip
+
+        self.curr_qps_deque = deque(maxlen=5)
+        self.prev_qps = 0
+
     def start_controlling(self):
         # Start memcached on core 0, do not use the set_memcached_cores function since we do not want to log the update_cores here
         self.logger.job_start(JobEnum.MEMCACHED, initial_cores=[0, 1], initial_threads=2)
         taskset_command = f"sudo taskset -a -c 0,1 -p {self.memcached_pid}"
         subprocess.run(taskset_command.split())
-
         self.create_jobs()
         self.schedule_loop()
 
@@ -68,9 +74,7 @@ class Controller:
         for job in JobEnum:
             if job == JobEnum.MEMCACHED or job == JobEnum.SCHEDULER:
                 continue
-            controller_job = self.job_create(job)
-            if job in THRESHOLDS:
-                controller_job.thresholds = THRESHOLDS[job]
+            self.job_create(job)
 
     def is_memcached_overloaded(self, cpu_threshold) -> bool:
         cpu_percent = psutil.cpu_percent(percpu=True)
@@ -104,6 +108,30 @@ class Controller:
 
         return sum(self.measurement_list) / len(self.measurement_list) < cpu_threshold
 
+    def curr_qps(self):
+        result = subprocess.run(
+            f"echo stats | nc {self.memached_ip} 11211 -N", shell=True, text=True, capture_output=True
+        )
+
+        cmd_get = None
+        for line in result.stdout.splitlines():
+            if line.startswith("STAT cmd_get"):
+                cmd_get = int(line.split()[-1])
+
+        if cmd_get is None:
+            self.logger.custom_event(JobEnum.MEMCACHED, "ERROR GETTING QPS")
+            if len(self.curr_qps_deque) == 0:
+                return 0
+            return sum(self.curr_qps_deque) / len(self.curr_qps_deque)
+
+        self.curr_qps_deque.append(cmd_get - self.prev_qps)
+        self.prev_qps = cmd_get
+
+        avg = sum(self.curr_qps_deque) / len(self.curr_qps_deque)
+        self.logger.custom_event(JobEnum.MEMCACHED, f"AVG QPS: {avg}")
+
+        return avg
+
     def schedule_loop(self):
         current_job: ControllerJob = self.jobs.pop(0)
         current_job.start_container()
@@ -124,15 +152,11 @@ class Controller:
                 if self.num_memcached_cores == 1:
                     current_job.update_cores([1, 2, 3])
             else:
-                if self.num_memcached_cores == 1 and self.is_memcached_overloaded(
-                    current_job.thresholds[0] or OVERLOADED_THRESHOLD
-                ):
+                curr_qps = self.curr_qps()
+                if self.num_memcached_cores == 1 and curr_qps > 5000:
                     self.set_memcached_cores([0, 1])
                     current_job.update_cores([2, 3])
-
-                elif self.num_memcached_cores == 2 and self.is_memcached_underloaded(
-                    current_job.thresholds[1] or UNDERLOADED_THRESHOLD
-                ):
+                elif self.num_memcached_cores == 2 and curr_qps < 5000:
                     self.set_memcached_cores([0])
                     current_job.update_cores([1, 2, 3])
 
@@ -143,5 +167,8 @@ class Controller:
 
 
 if __name__ == "__main__":
-    controller = Controller()
+
+    memcached_ip = sys.argv[1]
+
+    controller = Controller(memcached_ip)
     controller.start_controlling()
