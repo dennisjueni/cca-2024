@@ -70,9 +70,15 @@ class ControllerJob:
 
         logger.info(f"Updating {str(self)} container with cores {cores}")
 
-        self.cpu_cores = cores
-        self.container.update(cpuset_cpus=",".join(list(map(str, cores))))
-        self.logger.update_cores(self.job, cores)
+        try:
+            self.cpu_cores = cores
+            self.container.update(cpuset_cpus=",".join(list(map(str, cores))))
+            self.logger.update_cores(self.job, cores)
+        except docker.errors.APIError as e:
+            if e.explanation and "cannot update a stopped container" in e.explanation:
+                logger.info(f"This most likely means that the container was not running anymore so we just return")
+                return
+            raise e
 
     def pause(self) -> None:
         logger.info(f"Pausing {str(self)} container with id {self.container.short_id}")
