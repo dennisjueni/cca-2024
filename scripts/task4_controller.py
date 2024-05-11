@@ -105,8 +105,8 @@ class Controller:
         return sum(self.measurement_list) / len(self.measurement_list) < cpu_threshold
 
     def schedule_loop(self):
-        OVERLOADED_THRESHOLD = 70
-        UNDERLOADED_THRESHOLD = 100
+        OVERLOADED_THRESHOLD = 65
+        UNDERLOADED_THRESHOLD = 95
 
         current_job = self.jobs.pop(0)
         current_job.start_container()
