@@ -151,6 +151,7 @@ def run_part2():
             if line[0].startswith(MEMCACHED):
                 ssh_command(line[0], stop_comand)
                 ssh_command(line[0], remove_command)
+                ssh_command(line[0], "sudo rm log*.txt")
             if line[0].startswith("client-agent") or line[0].startswith("client-measure"):
                 ssh_command(line[0], "sudo pkill mcperf")
 

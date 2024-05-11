@@ -63,13 +63,12 @@ for i in range(4):
     )
 
 
-plt.xlabel("QPS")
+plt.xlabel("Achieved QPS")
 plt.ylabel("P95 latency (ms)")
 plt.hlines(1, xmin=QPS_MIN, xmax=QPS_MAX, color="k", linestyles="--")
 plt.xlim(QPS_MIN, QPS_MAX)
 plt.legend()
 plt.grid(True)
 
-plt.title("P95 latency plotted against running memcached with different number of cores and threads")
 
 plt.savefig(fname=f"{MEASURE_DIR}/plot_1a.pdf")

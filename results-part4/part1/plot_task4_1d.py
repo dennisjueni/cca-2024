@@ -15,8 +15,8 @@ suffix = {0: "1C_2T", 1: "2C_2T"}
 
 for i in range(2):
     fig, ax1 = plt.subplots()
-    qps = []
-    p95 = []
+    qps = [[], [], []]
+    p95 = [[], [], []]
     xs = []
     ys = []
     target = []
@@ -24,8 +24,8 @@ for i in range(2):
     yerr = []
     groups_y = {}
     groups_x = {}
-    cpu_usage = []
-    for j in range(1):
+    cpu_usage = [[], [], []]
+    for j in range(3):
         file_path = MEASURE_DIR + f"{suffix[i]}/run_{j}/mcperf.txt"
         file = open(file_path, "r")
         lines = file.read().splitlines()
@@ -37,9 +37,9 @@ for i in range(2):
         cpu_lines = file.read().splitlines()
         cpu_lines = [line.split() for line in cpu_lines]
 
-        qps = qps + [float(line[-4]) for line in lines]
+        qps[j] = qps[j] + [float(line[-4]) for line in lines]
         target = target + [float(line[-3]) for line in lines]
-        cpu_usage = []
+        # cpu_usage = []
         for l in lines:
             start = datetime.utcfromtimestamp(int(l[-2]) / 1000)
             end = datetime.utcfromtimestamp(int(l[-1]) / 1000)
@@ -55,17 +55,16 @@ for i in range(2):
                     count += 1
                     continue
                 if i == 0:
-                    cpu_usage.append([float(cpu_l[2])])
+                    cpu_usage[j].append(float(cpu_l[2]))
                 else:
-                    cpu_usage.append([float(cpu_l[3]) + float(cpu_l[2])])
+                    cpu_usage[j].append(float(cpu_l[3]) + float(cpu_l[2]))
                 break
 
-        p95 = p95 + [float(line[-8]) / 1000 for line in lines]
+        p95[j] = p95[j] + [float(line[-8]) / 1000 for line in lines]
 
-    legend_elements = [
-        Patch(facecolor="#CC0A00", label="P95 latency"),
-        Patch(facecolor="#00CCA0", label="CPU utilization"),
-    ]
+    qps = [sum(group) / len(group) for group in zip(*qps)]
+    p95 = [sum(group) / len(group) for group in zip(*p95)]
+    cpu_usage = [sum(group) / len(group) for group in zip(*cpu_usage)]
 
     ax1.plot(qps, p95, color="#CC0A00", label="P95", marker="x")
     ax1.set_ylabel("P95 Tail Latency (ms)", color="#CC0A00")
@@ -86,9 +85,7 @@ for i in range(2):
     else:
         ax2.set_ylim([0, 210])
 
-    plt.title(f"P95 Tail Latency and CPU Utsilization vs QPS for {labels[i]}")
     plt.xlim(QPS_MIN, QPS_MAX)
-    plt.legend(handles=legend_elements)
-    ax1.set_xlabel("QPS")
+    ax1.set_xlabel("Achieved QPS")
     plt.savefig(fname=f"{MEASURE_DIR}/plot_1d_{suffix[i]}.pdf")
     plt.close()

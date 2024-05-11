@@ -36,7 +36,7 @@ class Controller:
         self.memcached_pid = memcached_pid()
         self.num_memcached_cores = 2
         self.logger = SchedulerLogger()
-        self.measurement_list = deque(maxlen=5)
+        self.measurement_list = deque(maxlen=10)
 
     def start_controlling(self):
         # Start memcached on core 0, do not use the set_memcached_cores function since we do not want to log the update_cores here
