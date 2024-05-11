@@ -7,15 +7,19 @@ from matplotlib.patches import Patch
 
 total_times = {}
 
-# This just takes the newest subfolder!
-main_folder_path = "./results-part4/part2"
-subfolders = [
-    os.path.join(main_folder_path, f)
-    for f in os.listdir(main_folder_path)
-    if os.path.isdir(os.path.join(main_folder_path, f))
-]
-subfolders.sort()
-BASE_DIR = subfolders[-1]
+if len(sys.argv) > 1:
+    BASE_DIR = sys.argv[1]
+else:
+    # This just takes the newest subfolder!
+    main_folder_path = "./results-part4/part2"
+    subfolders = [
+        os.path.join(main_folder_path, f)
+        for f in os.listdir(main_folder_path)
+        if os.path.isdir(os.path.join(main_folder_path, f))
+    ]
+    subfolders.sort()
+    BASE_DIR = subfolders[-1]
+
 
 for i in range(3):
 
