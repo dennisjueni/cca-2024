@@ -6,12 +6,12 @@ NUM_THREADS_MEMCACHED = 4
 
 
 class JobEnum(Enum):
-    RADIX = "radix"
     BLACKSCHOLES = "blackscholes"
     CANNEAL = "canneal"
     DEDUP = "dedup"
     FERRET = "ferret"
     FREQMINE = "freqmine"
+    RADIX = "radix"
     VIPS = "vips"
     SCHEDULER = "scheduler"
     MEMCACHED = "memcached"
@@ -56,7 +56,7 @@ THRESHOLDS = {
     JobEnum.BLACKSCHOLES: CHANGE_THRESHOLD,
     JobEnum.CANNEAL: CHANGE_THRESHOLD,
     JobEnum.DEDUP: CHANGE_THRESHOLD - 500,
-    JobEnum.FERRET: CHANGE_THRESHOLD - 750,
+    JobEnum.FERRET: CHANGE_THRESHOLD - 1000,
     JobEnum.FREQMINE: CHANGE_THRESHOLD,
     JobEnum.RADIX: CHANGE_THRESHOLD,
     JobEnum.VIPS: CHANGE_THRESHOLD,

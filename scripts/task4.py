@@ -106,7 +106,7 @@ def run_part2():
         logger.error("Could not find the memcached node")
         sys.exit(1)
 
-    base_log_dir = os.path.join(".", "results-part4", "part2", time.strftime("%Y-%m-%d-%H-%M"))
+    base_log_dir = os.path.join(".", "results-part4", "part2_final_runs", time.strftime("%Y-%m-%d-%H-%M"))
     os.makedirs(base_log_dir, exist_ok=True)
 
     try:
