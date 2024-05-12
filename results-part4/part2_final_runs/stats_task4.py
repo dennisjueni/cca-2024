@@ -23,7 +23,7 @@ else:
 
 for i in range(3):
 
-    LOG_FILE_PATH_PARS = BASE_DIR + f"/log.txt"
+    LOG_FILE_PATH_PARS = BASE_DIR + f"log.txt"  # /int10_run{i+2}/log.txt
 
     time_format = "%Y-%m-%dT%H:%M:%SZ"
     file = open(LOG_FILE_PATH_PARS, "r")
@@ -97,7 +97,7 @@ total = np.sum(total_times["total_time"]).total_seconds() // 7
 violation = 0
 
 for i in range(3):
-    LOG_FILE_PATH_MEMC = BASE_DIR + f"/mcperf.txt"
+    LOG_FILE_PATH_MEMC = BASE_DIR + f"/mcperf.txt"  # /int10_run{i+2}/mcperf.txt
     mc_file = open(LOG_FILE_PATH_MEMC, "r")
     mc_file = mc_file.read()
     lines = mc_file.splitlines()

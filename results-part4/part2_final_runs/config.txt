@@ -1,0 +1,213 @@
+"""
+DOCKERIMAGES = {
+    JobEnum.BLACKSCHOLES: "anakli/cca:parsec_blackscholes",
+    JobEnum.CANNEAL: "anakli/cca:parsec_canneal",
+    JobEnum.DEDUP: "anakli/cca:parsec_dedup",
+    JobEnum.FERRET: "anakli/cca:parsec_ferret",
+    JobEnum.FREQMINE: "anakli/cca:parsec_freqmine",
+    JobEnum.RADIX: "anakli/cca:splash2x_radix",
+    JobEnum.VIPS: "anakli/cca:parsec_vips",
+}
+
+NR_THREADS = {
+    JobEnum.BLACKSCHOLES: 2,
+    JobEnum.CANNEAL: 2,
+    JobEnum.DEDUP: 2,
+    JobEnum.FERRET: 2,
+    JobEnum.FREQMINE: 2,
+    JobEnum.RADIX: 2,
+    JobEnum.VIPS: 2,
+}
+
+CPU_CORES = {
+    JobEnum.BLACKSCHOLES: [2, 3],
+    JobEnum.CANNEAL: [2, 3],
+    JobEnum.DEDUP: [2, 3],
+    JobEnum.FERRET: [2, 3],
+    JobEnum.FREQMINE: [2, 3],
+    JobEnum.RADIX: [2, 3],
+    JobEnum.VIPS: [2, 3],
+}
+
+sudo_command = f"sudo usermod -a -G docker {USER}"
+
+
+# CHANGE_THRESHOLD * 10 is the QPS at which we will switch from 1 to 2 cores or vice versa
+CHANGE_THRESHOLD = 5000
+THRESHOLDS = {
+    JobEnum.BLACKSCHOLES: CHANGE_THRESHOLD,
+    JobEnum.CANNEAL: CHANGE_THRESHOLD,
+    JobEnum.DEDUP: CHANGE_THRESHOLD - 500,
+    JobEnum.FERRET: CHANGE_THRESHOLD - 1000,
+    JobEnum.FREQMINE: CHANGE_THRESHOLD,
+    JobEnum.RADIX: CHANGE_THRESHOLD,
+    JobEnum.VIPS: CHANGE_THRESHOLD,
+}
+
+"""
+
+import sys
+import time
+import docker
+import docker.models
+import docker.models.containers
+from docker.client import DockerClient
+import psutil
+import subprocess
+from collections import deque
+
+from task4_scheduler_logger import SchedulerLogger
+from task4_job import ControllerJob
+from task4_config import JobEnum
+
+
+def memcached_pid() -> str:
+    try:
+        # Run pidof command and capture output
+        output = subprocess.check_output(["pidof", "memcached"]).decode("utf-8").strip()
+        # Extract the first PID (assuming only one found)
+        pid = output.split()[0]
+        return pid
+    except subprocess.CalledProcessError:
+        print(f"Process 'memcached' not found")
+        raise ValueError("Could not resolve pid of memcached. Is it running?")
+
+
+class Controller:
+
+    def __init__(self, memcached_ip: str):
+        self.client: DockerClient = docker.from_env()
+        self.jobs: list[ControllerJob] = []
+        self.memcached_pid = memcached_pid()
+        self.num_memcached_cores = 2
+        self.logger = SchedulerLogger()
+        self.measurement_list = deque(maxlen=10)
+
+        self.memached_ip = memcached_ip
+        self.curr_qps_deque = deque(maxlen=5)
+        self.prev_qps = 0
+
+    def start_controlling(self):
+        # Start memcached on core 0, do not use the set_memcached_cores function since we do not want to log the update_cores here
+        self.logger.job_start(JobEnum.MEMCACHED, initial_cores=[0, 1], initial_threads=2)
+        taskset_command = f"sudo taskset -a -c 0,1 -p {self.memcached_pid}"
+        subprocess.run(taskset_command.split())
+        self.create_jobs()
+        self.schedule_loop()
+
+    def set_memcached_cores(self, cores: list[int]):
+        if len(cores) == self.num_memcached_cores:
+            return
+        self.measurement_list.clear()
+        self.num_memcached_cores = len(cores)
+        taskset_command = f"sudo taskset -a -c {','.join(list(map(str, cores)))} -p {self.memcached_pid}"
+        subprocess.run(taskset_command.split())
+        self.logger.update_cores(JobEnum.MEMCACHED, cores=cores)
+
+    def job_create(self, job_enum: JobEnum) -> ControllerJob:
+        controller_job = ControllerJob(job_enum, client=self.client, logger=self.logger)
+
+        controller_job.create_container()
+
+        self.jobs.append(controller_job)
+        return controller_job
+
+    def create_jobs(self):
+        for job in JobEnum:
+            if job == JobEnum.MEMCACHED or job == JobEnum.SCHEDULER:
+                continue
+            self.job_create(job)
+
+    def is_memcached_overloaded(self, cpu_threshold) -> bool:
+        cpu_percent = psutil.cpu_percent(percpu=True)
+
+        if cpu_percent[0] == 0.0 or (self.num_memcached_cores == 2 and cpu_percent[1] == 0.0):
+            return False
+
+        if self.num_memcached_cores == 1:
+            self.measurement_list.append(cpu_percent[0])
+        else:
+            self.measurement_list.append(cpu_percent[0] + cpu_percent[1])
+
+        if len(self.measurement_list) < 5:
+            return False
+
+        return sum(self.measurement_list) / len(self.measurement_list) > cpu_threshold
+
+    def is_memcached_underloaded(self, cpu_threshold) -> bool:
+        cpu_percent = psutil.cpu_percent(percpu=True)
+
+        if cpu_percent[0] == 0.0 or (self.num_memcached_cores == 2 and cpu_percent[1] == 0.0):
+            return False
+
+        if self.num_memcached_cores == 1:
+            self.measurement_list.append(cpu_percent[0])
+        else:
+            self.measurement_list.append(cpu_percent[0] + cpu_percent[1])
+
+        if len(self.measurement_list) < 5:
+            return False
+
+        return sum(self.measurement_list) / len(self.measurement_list) < cpu_threshold
+
+    def curr_qps(self):
+        result = subprocess.run(
+            f"echo stats | nc {self.memached_ip} 11211 -N", shell=True, text=True, capture_output=True
+        )
+
+        cmd_get = None
+        for line in result.stdout.splitlines():
+            if line.startswith("STAT cmd_get"):
+                cmd_get = int(line.split()[-1])
+
+        if cmd_get is None:
+            self.logger.custom_event(JobEnum.MEMCACHED, "ERROR GETTING QPS")
+            if len(self.curr_qps_deque) == 0:
+                return 0
+            return sum(self.curr_qps_deque) / len(self.curr_qps_deque)
+
+        self.curr_qps_deque.append(cmd_get - self.prev_qps)
+        self.prev_qps = cmd_get
+
+        return sum(self.curr_qps_deque) / len(self.curr_qps_deque)
+
+    def schedule_loop(self):
+        current_job: ControllerJob = self.jobs.pop(0)
+        current_job.start_container()
+
+        while True:
+            curr_job_finished = current_job.is_finished()
+
+            if curr_job_finished:
+                if len(self.jobs) == 0:
+                    # This means we have finished all jobs and we can thus break the loop and let memcached run alone
+                    self.set_memcached_cores([0, 1])
+                    break
+
+                # This means we can start the next job in the list and run it
+                current_job = self.jobs.pop(0)
+                current_job.start_container()
+
+                if self.num_memcached_cores == 1:
+                    current_job.update_cores([1, 2, 3])
+            else:
+                curr_qps = self.curr_qps()
+                if self.num_memcached_cores == 1 and curr_qps > current_job.threshold:
+                    self.set_memcached_cores([0, 1])
+                    current_job.update_cores([2, 3])
+                elif self.num_memcached_cores == 2 and curr_qps < current_job.threshold:
+                    self.set_memcached_cores([0])
+                    current_job.update_cores([1, 2, 3])
+
+            time.sleep(0.1)
+
+        time.sleep(60)
+        self.logger.job_end(JobEnum.MEMCACHED)
+
+
+if __name__ == "__main__":
+
+    memcached_ip = sys.argv[1]
+
+    controller = Controller(memcached_ip)
+    controller.start_controlling()

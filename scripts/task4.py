@@ -145,7 +145,7 @@ def run_part2():
             copy_file_from_node(memcached_name, f"~/{f}", os.path.join(base_log_dir, "log.txt"))
 
         file_path = os.path.dirname(os.path.realpath(__file__))
-        subprocess.run(f"python3 {file_path}/../results-part4/part2/plot_task4.py {base_log_dir}".split())
+        subprocess.run(f"python3 {file_path}/../results-part4/part2_final_runs/plot_task4.py {base_log_dir}".split())
 
     finally:
         stop_comand = "sudo docker stop $(docker ps -a -q)"
