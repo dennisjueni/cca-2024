@@ -99,7 +99,7 @@ for RUN in RUNS:
     assert len(memcache_end) == 1
     memcache_end = datetime.utcfromtimestamp(int(memcache_end[0].split()[-1]) / 1000)
 
-    memcache_delta = timedelta(seconds=1.5)
+    memcache_delta = timedelta(seconds=INTERVAL)
 
     entries = [line.split() for line in lines]
     entries = [entry for entry in entries if len(entry) == 18][1:]
