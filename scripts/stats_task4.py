@@ -7,7 +7,7 @@ total_times = {}
 
 INTERVAL = 1
 RUNS = [0, 1, 2]
-BASE_DIR = "."
+BASE_DIR = "results-part4/part2_final_runs"
 
 
 for i in RUNS:

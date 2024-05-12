@@ -1,5 +1,3 @@
-# Taking the runs [2,3,4] since 0&1 are kind of weird
-
 blackscholes: mean = 62.37, std = 0.47
 canneal: mean = 143.84, std = 1.14
 dedup: mean = 22.93, std = 0.12
