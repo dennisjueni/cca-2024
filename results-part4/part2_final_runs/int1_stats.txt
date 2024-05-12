@@ -1,0 +1,11 @@
+# Taking runs 0, 1, and 2
+
+blackscholes: mean = 62.04, std = 0.73
+canneal: mean = 151.82, std = 0.97
+dedup: mean = 23.37, std = 0.43
+ferret: mean = 188.32, std = 1.88
+freqmine: mean = 273.78, std = 2.26
+radix: mean = 23.05, std = 0.22
+vips: mean = 56.48, std = 0.95
+total_time: mean = 780.53, std = 4.31
+Violation rate of 1.6228389851679754%

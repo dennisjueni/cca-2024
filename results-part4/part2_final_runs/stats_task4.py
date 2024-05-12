@@ -1,15 +1,13 @@
-import os
 import sys
 from datetime import datetime
 import numpy as np
-from matplotlib.patches import Patch
 
 
 total_times = {}
 
 INTERVAL = 1
-RUNS = [0, 1]
-BASE_DIR = "results-part4/part2_final_runs"
+RUNS = [0, 1, 2]
+BASE_DIR = "."
 
 
 for i in RUNS:

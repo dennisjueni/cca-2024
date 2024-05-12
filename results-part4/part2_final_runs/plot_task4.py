@@ -7,8 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-INTERVAL = 1
-RUN = 1
+INTERVAL = 10
+RUN = 4
 BASE_DIR = "results-part4/part2_final_runs"
 
 time_format = "%Y-%m-%dT%H:%M:%S.%Z"

@@ -1,0 +1,11 @@
+# Taking the runs [2,3,4] since 0&1 are kind of weird
+
+blackscholes: mean = 62.37, std = 0.47
+canneal: mean = 143.84, std = 1.14
+dedup: mean = 22.93, std = 0.12
+ferret: mean = 194.71, std = 2.61
+freqmine: mean = 285.69, std = 0.47
+radix: mean = 22.12, std = 0.47
+vips: mean = 60.96, std = 2.22
+total_time: mean = 794.42, std = 2.86
+Violation rate of 0.0%
