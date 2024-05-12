@@ -7,6 +7,10 @@ from matplotlib.patches import Patch
 
 total_times = {}
 
+interval = 2
+
+num_runs = 1
+
 if len(sys.argv) > 1:
     BASE_DIR = sys.argv[1]
 else:
@@ -21,42 +25,34 @@ else:
     BASE_DIR = subfolders[-1]
 
 
-for i in range(3):
+for i in range(num_runs):
 
-    LOG_FILE_PATH_PARS = BASE_DIR + f"log.txt"  # /int10_run{i+2}/log.txt
+    LOG_FILE_PATH_PARS = BASE_DIR + f"/log.txt"  # /int10_run{i+2}/log.txt
 
     time_format = "%Y-%m-%dT%H:%M:%SZ"
     file = open(LOG_FILE_PATH_PARS, "r")
     lines = file.read().splitlines()
-    times_per_run = {}
-    runs = []  # (start, finish, name, machine, color, cores)
-    # df = pd.DataFrame([], columns=['start', 'finish', 'name', 'machine'])
-    # print(df)
 
     start_events = {}
     start_times = []
     completion_times = []
-    runs = []
     durations = {}
     for line in lines:
         time = datetime.fromisoformat(line.split()[0])
         event = line.split()[1]
         name = line.split()[2]
-        if name == "scheduler":
+        if name == "scheduler" or name == "memcached":
             continue
 
         if event == "start":
             start_events[name] = time
-
         elif event == "unpause":
             start_events[name] = time
-
         elif event == "end" or event == "pause":
             try:
                 start_time = start_events[name]
 
                 completion_time = time
-                print(f"Job time {name}: ", completion_time - start_time, start_time)
                 completion_times.append(completion_time)
                 start_times.append(start_time)
                 if name in durations.keys():
@@ -76,27 +72,27 @@ for i in range(3):
         else:
             total_times[key].append(durations[key])
 
-    print("Total time: {0}".format(max(completion_times) - min(start_times)))
     name = "total_time"
-    if name in total_times.keys():
-        total_times[name].append(max(completion_times) - min(start_times))
-    else:
+    if i == 0:
         total_times[name] = [max(completion_times) - min(start_times)]
+    else:
+        total_times[name].append(max(completion_times) - min(start_times))
+
     file.close()
 
 
 for key in total_times.keys():
     times = total_times[key]
-    assert len(times) == 3
+    assert len(times) == num_runs
     times = [x.total_seconds() for x in times]
     mean = np.mean(times)
     std = np.std(times)
     print(f"{key}: mean = {mean:.2f}, std = {std:.2f}")
 
-total = np.sum(total_times["total_time"]).total_seconds() // 7
+total_time_over_all_runs = np.sum(total_times["total_time"]).total_seconds()
 violation = 0
 
-for i in range(3):
+for i in range(num_runs):
     LOG_FILE_PATH_MEMC = BASE_DIR + f"/mcperf.txt"  # /int10_run{i+2}/mcperf.txt
     mc_file = open(LOG_FILE_PATH_MEMC, "r")
     mc_file = mc_file.read()
@@ -107,6 +103,6 @@ for i in range(3):
         p95 = float(entry[-6])
         if p95 > 1000:
             violation += 1
-            print(f"SLO violation for target: {entry[-1]} and p95: {p95}")
 
-print(f"Violation rate of {violation*100./total}%")
+
+print(f"Violation rate of {violation*interval*100./total_time_over_all_runs}%")
