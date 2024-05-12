@@ -7,27 +7,14 @@ from matplotlib.patches import Patch
 
 total_times = {}
 
-interval = 2
-
-num_runs = 1
-
-if len(sys.argv) > 1:
-    BASE_DIR = sys.argv[1]
-else:
-    # This just takes the newest subfolder!
-    main_folder_path = "./results-part4/part2"
-    subfolders = [
-        os.path.join(main_folder_path, f)
-        for f in os.listdir(main_folder_path)
-        if os.path.isdir(os.path.join(main_folder_path, f))
-    ]
-    subfolders.sort()
-    BASE_DIR = subfolders[-1]
+INTERVAL = 1
+RUNS = [0, 1]
+BASE_DIR = "results-part4/part2_final_runs"
 
 
-for i in range(num_runs):
+for i in RUNS:
 
-    LOG_FILE_PATH_PARS = BASE_DIR + f"/log.txt"  # /int10_run{i+2}/log.txt
+    LOG_FILE_PATH_PARS = BASE_DIR + f"/int{INTERVAL}_run{i}/log.txt"
 
     time_format = "%Y-%m-%dT%H:%M:%SZ"
     file = open(LOG_FILE_PATH_PARS, "r")
@@ -67,23 +54,23 @@ for i in range(num_runs):
         else:
             print("WARNING: UNKNOWN EVENT", event)
     for key in durations.keys():
-        if i == 0:
-            total_times[key] = [durations[key]]
-        else:
+        if key in total_times.keys():
             total_times[key].append(durations[key])
+        else:
+            total_times[key] = [durations[key]]
 
     name = "total_time"
-    if i == 0:
-        total_times[name] = [max(completion_times) - min(start_times)]
-    else:
+    if name in total_times.keys():
         total_times[name].append(max(completion_times) - min(start_times))
+    else:
+        total_times[name] = [max(completion_times) - min(start_times)]
 
     file.close()
 
 
 for key in total_times.keys():
     times = total_times[key]
-    assert len(times) == num_runs
+    assert len(times) == len(RUNS)
     times = [x.total_seconds() for x in times]
     mean = np.mean(times)
     std = np.std(times)
@@ -92,8 +79,8 @@ for key in total_times.keys():
 total_time_over_all_runs = np.sum(total_times["total_time"]).total_seconds()
 violation = 0
 
-for i in range(num_runs):
-    LOG_FILE_PATH_MEMC = BASE_DIR + f"/mcperf.txt"  # /int10_run{i+2}/mcperf.txt
+for i in RUNS:
+    LOG_FILE_PATH_MEMC = BASE_DIR + f"/int{INTERVAL}_run{i}/mcperf.txt"
     mc_file = open(LOG_FILE_PATH_MEMC, "r")
     mc_file = mc_file.read()
     lines = mc_file.splitlines()
@@ -105,4 +92,4 @@ for i in range(num_runs):
             violation += 1
 
 
-print(f"Violation rate of {violation*interval*100./total_time_over_all_runs}%")
+print(f"Violation rate of {violation*INTERVAL*100./total_time_over_all_runs}%")

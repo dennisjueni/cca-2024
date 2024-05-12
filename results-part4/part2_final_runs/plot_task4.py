@@ -6,21 +6,13 @@ from datetime import timedelta
 import numpy as np
 import matplotlib.pyplot as plt
 
-if len(sys.argv) > 1:
-    BASE_DIR = sys.argv[1]
-else:
-    # This just takes the newest subfolder!
-    main_folder_path = "./results-part4/part2"
-    subfolders = [
-        os.path.join(main_folder_path, f)
-        for f in os.listdir(main_folder_path)
-        if os.path.isdir(os.path.join(main_folder_path, f))
-    ]
-    subfolders.sort()
-    BASE_DIR = subfolders[-1]
+
+INTERVAL = 1
+RUN = 1
+BASE_DIR = "results-part4/part2_final_runs"
 
 time_format = "%Y-%m-%dT%H:%M:%S.%Z"
-file = open(os.path.join(BASE_DIR, "log.txt"), "r")
+file = open(os.path.join(BASE_DIR, f"int{INTERVAL}_run{RUN}/log.txt"), "r")
 lines = file.read().splitlines()
 MAX_LEN = 1000
 runs = []  # (start, finish, name, machine, color, cores)
@@ -97,7 +89,7 @@ legend_elements = [Patch(facecolor=c_dict[i], label=i) for i in c_dict]
 fig, ax1 = plt.subplots(figsize=(20, 9))
 START = min(start_times)
 
-mc_file = open(os.path.join(BASE_DIR, "mcperf.txt"), "r")
+mc_file = open(os.path.join(BASE_DIR, f"int{INTERVAL}_run{RUN}/mcperf.txt"), "r")
 mc_file = mc_file.read()
 lines = mc_file.splitlines()
 memcache_start = [entry for entry in lines if entry.startswith("Timestamp start")]
@@ -108,7 +100,7 @@ memcache_end = [entry for entry in lines if entry.startswith("Timestamp end")]
 assert len(memcache_end) == 1
 memcache_end = datetime.utcfromtimestamp(int(memcache_end[0].split()[-1]) / 1000)
 
-memcache_delta = timedelta(seconds=10)
+memcache_delta = timedelta(seconds=1.5)
 
 entries = [line.split() for line in lines]
 entries = [entry for entry in entries if len(entry) == 18][1:]
@@ -204,4 +196,4 @@ ax2.set_yticks(yticks, ylabels)
 ax2.set_ylabel("QPS", color="orange", fontdict={"fontsize": 16})
 ax1.set_xlabel("Time since memcached started [s]", fontdict={"fontsize": 16})
 
-plt.savefig(fname=f"{BASE_DIR}/plot.pdf")
+plt.savefig(fname=f"{BASE_DIR}/int{INTERVAL}_run{RUN}/plot.pdf")
