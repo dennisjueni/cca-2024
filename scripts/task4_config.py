@@ -28,13 +28,13 @@ DOCKERIMAGES = {
 }
 
 NR_THREADS = {
-    JobEnum.BLACKSCHOLES: 2,
-    JobEnum.CANNEAL: 2,
-    JobEnum.DEDUP: 2,
-    JobEnum.FERRET: 2,
-    JobEnum.FREQMINE: 2,
-    JobEnum.RADIX: 2,
-    JobEnum.VIPS: 2,
+    JobEnum.BLACKSCHOLES: 4,
+    JobEnum.CANNEAL: 4,
+    JobEnum.DEDUP: 4,
+    JobEnum.FERRET: 4,
+    JobEnum.FREQMINE: 4,
+    JobEnum.RADIX: 4,
+    JobEnum.VIPS: 4,
 }
 
 CPU_CORES = {

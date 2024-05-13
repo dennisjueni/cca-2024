@@ -5,9 +5,9 @@ from plot_task4 import plot as plot_task4
 
 
 def plot_all():
-    plot_task3()
-    plot_task4_1a()
-    plot_task4_1d()
+    # plot_task3()
+    # plot_task4_1a()
+    # plot_task4_1d()
     plot_task4()
 
 
