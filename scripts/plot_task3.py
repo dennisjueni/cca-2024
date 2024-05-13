@@ -35,7 +35,7 @@ def main():
 
     runs = ["run1", "run2", "run3"]
 
-    calculate_execution_time(runs)
+    # calculate_execution_time(runs)
 
     for run in runs:
         generate_plots(run)
@@ -56,26 +56,27 @@ def calculate_execution_time(runs: List[str]):
 
         for item in json_file["items"]:
             name = item["status"]["containerStatuses"][0]["name"]
-            if str(name) != "memcached":
-                try:
-                    start_time = datetime.strptime(
-                        item["status"]["containerStatuses"][0]["state"]["terminated"]["startedAt"], time_format
-                    )
-                    completion_time = datetime.strptime(
-                        item["status"]["containerStatuses"][0]["state"]["terminated"]["finishedAt"], time_format
-                    )
+            if str(name) == "memcached":
+                continue
+            try:
+                start_time = datetime.strptime(
+                    item["status"]["containerStatuses"][0]["state"]["terminated"]["startedAt"], time_format
+                )
+                completion_time = datetime.strptime(
+                    item["status"]["containerStatuses"][0]["state"]["terminated"]["finishedAt"], time_format
+                )
 
-                    if name in total_exec_time.keys():
-                        total_exec_time[name].append(completion_time - start_time)
-                    else:
-                        total_exec_time[name] = [completion_time - start_time]
+                if name in total_exec_time.keys():
+                    total_exec_time[name].append(completion_time - start_time)
+                else:
+                    total_exec_time[name] = [completion_time - start_time]
 
-                    start_times.append(start_time)
-                    completion_times.append(completion_time)
-
-                except KeyError:
-                    print("Job {0} has not completed....".format(name))
-                    sys.exit(0)
+                start_times.append(start_time)
+                completion_times.append(completion_time)
+ 
+            except KeyError:
+                print("Job {0} has not completed....".format(name))
+                sys.exit(0)
 
         if total_time_name in total_exec_time.keys():
             total_exec_time[total_time_name].append(max(completion_times) - min(start_times))
@@ -101,9 +102,7 @@ def calculate_execution_time(runs: List[str]):
 
 def generate_plots(current_run: str):
 
-    benchmark_runs: List[Tuple[datetime, datetime, str, str, str, str]] = (
-        []
-    )  # (start, finish, name, machine, color, cores)
+    benchmark_runs: List[Tuple[datetime, datetime, str, str, str, str]] = []  # (start, finish, name, machine, color, cores)
     results_file = open(f"results-part3/final_runs/{current_run}/results.json", "r")
     json_file = json.load(results_file)
     start_times = []
@@ -156,7 +155,6 @@ def generate_plots(current_run: str):
     ax.xaxis.grid(True, which="both")
     ax.yaxis.grid(True, which="both")
     ax.set_axisbelow(True)
-    # ax.yaxis.grid(True, which='ma')
     START = min(start_times)
     HEIGHT = 100
     HEIGHT_NO_OFFSET = 90
