@@ -255,7 +255,7 @@ def generate_plots(current_run: str):
     ax.set_yticks(yticks, labels=ylabels, minor=True)
 
     plt.title(f"P95 Latency of Memcached & Benchmark Schedule", fontdict={"fontsize": 20}, pad=15)
-    plt.xlabel("Time since first PARSEC benchmark start (seconds)", fontdict={"fontsize": 15})
+    plt.xlabel("Time since first PARSEC benchmark started (sec)", fontdict={"fontsize": 15})
     plt.ylim(0, NODE_A_END)
 
     plt.savefig(fname=f"results-part3/final_runs/{current_run}_plot.pdf")
