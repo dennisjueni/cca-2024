@@ -1,7 +1,6 @@
 import sys
 from typing import Dict, List, Tuple
 from matplotlib import pyplot as plt
-from matplotlib.patches import Patch
 import numpy as np
 import json
 from datetime import datetime, timedelta
@@ -16,9 +15,9 @@ colors = {
     "parsec-freqmine": "#0CCA00",
     "parsec-radix": "#00CCA0",
     "parsec-vips": "#CC0A00",
-    "memcached": "#CC00AA",
+    "memcached": "#888888",
 }
-p95_color = "C0"
+p95_color = "#6A0DAD"
 
 labels = {
     "parsec-blackscholes": "Blackscholes",
@@ -35,7 +34,7 @@ def main():
 
     runs = ["run1", "run2", "run3"]
 
-    # calculate_execution_time(runs)
+    calculate_execution_time(runs)
 
     for run in runs:
         generate_plots(run)
@@ -148,48 +147,62 @@ def generate_plots(current_run: str):
 
     MAX_LEN = max((max(completion_times) - min(start_times)).total_seconds(), 180)
 
-    legend_elements = [Patch(facecolor=colors[i], label=labels[i]) for i in colors]
-
     fig = plt.figure(figsize=(20, 9), dpi=600)
     ax = plt.subplot(111)
+    # Make sure we have a grid (only on major yticks) & assure the grid is drawn below all bars
     ax.xaxis.grid(True, which="both")
-    ax.yaxis.grid(True, which="both")
+    ax.yaxis.grid(True, which="major")
     ax.set_axisbelow(True)
+
     START = min(start_times)
     HEIGHT = 100
     HEIGHT_NO_OFFSET = 90
-    MARGIN = 100
-    NODE_A_START = MARGIN + 1000
-    ax.axhline(y=NODE_A_START - MARGIN / 2, color="k", linestyle="-")
+    MAIN_MARGIN = 200
+    MARGIN = 50
 
-    NODE_B_START = NODE_A_START + 2 * HEIGHT + MARGIN
-    ax.axhline(y=NODE_B_START - MARGIN / 2, color="k", linestyle="-")
-    NODE_C_START = NODE_B_START + 4 * HEIGHT + MARGIN
-    ax.axhline(y=NODE_C_START - MARGIN / 2, color="k", linestyle="-")
+    NODE_C_START = MAIN_MARGIN + 1000
+    ax.axhline(y=NODE_C_START - MAIN_MARGIN / 2 + 10, color="k", linestyle="-", linewidth=1.5)
 
-    NODE_C_END = NODE_C_START + 8 * HEIGHT + MARGIN / 2
-    ax.axhline(y=NODE_C_END - 4, color="k", linestyle="-")
+    NODE_B_START = NODE_C_START + 8 * HEIGHT + MARGIN
+    ax.axhline(y=NODE_B_START - MARGIN / 2, color="k", linestyle="-", linewidth= 0.75)
+
+    NODE_A_START = NODE_B_START + 4 * HEIGHT + MARGIN
+    ax.axhline(y=NODE_A_START - MARGIN / 2, color="k", linestyle="-", linewidth = 0.75)
+
+    NODE_A_END = NODE_A_START + 2 * HEIGHT + MARGIN / 2
 
     for run in benchmark_runs:
         if run[3].startswith("node-a"):
             offset = NODE_A_START
+            num_cores = 2
         elif run[3].startswith("node-b"):
             offset = NODE_B_START
+            num_cores = 4
         elif run[3].startswith("node-c"):
             offset = NODE_C_START
+            num_cores = 8
         else:
             print("Wrong machine", run[3])
             sys.exit(0)
         for core in run[5]:
+            name = run[2].removeprefix("parsec-").capitalize()
+            y_val = (num_cores - int(core) - 1) * HEIGHT + offset + 10
+            left_x = (run[0] - min(start_times)).total_seconds()
+            width = (run[1] - run[0]).total_seconds()
+
             ax.barh(
-                int(core) * HEIGHT + offset + 10,
-                (run[1] - run[0]).total_seconds(),
-                left=(run[0] - min(start_times)).total_seconds(),
+                y_val,
+                width,
+                left=left_x,
                 color=run[4],
                 height=HEIGHT_NO_OFFSET,
                 align="edge",
             )
-    ax.barh(NODE_A_START + 10, MAX_LEN, left=0, color=colors["memcached"], height=HEIGHT_NO_OFFSET, align="edge")
+            ax.text(left_x + width / 2, y_val + 10, f'{name}', ha='center', va='bottom', color='white', fontweight='bold')
+
+    ax.barh(NODE_A_START + HEIGHT + 10, MAX_LEN, left=0, color=colors["memcached"], height=HEIGHT_NO_OFFSET, align="edge")
+    ax.text(0 + MAX_LEN / 2, NODE_A_START + HEIGHT + 20, f'Memcached', ha='center', va='bottom', color='white', fontweight='bold')
+
 
     mc_file = open(f"results-part3/final_runs/{current_run}/mcperf.txt", "r")
     mc_file = mc_file.read()
@@ -204,52 +217,46 @@ def generate_plots(current_run: str):
         end = (end - START).total_seconds()
         start = (start - START).total_seconds()
         p95 = entry[-8]
-        ax.bar((start + end) / 2, float(p95), width=10, color=p95_color)
+        ax.bar((start + end) / 2, float(p95), width=10, color=p95_color, edgecolor='black', linewidth=1)
 
-    ax.axhline(y=1000, color="navy", linestyle="--", xmax=0.485)
-    ax.axhline(y=1000, color="navy", linestyle="--", xmin=0.515)
-    ax.text(MAX_LEN / 2, 998, 'SLO', va='center', ha='center', color='navy', fontsize=12)
+    ax.axhline(y=1000, color="black", linestyle="--", xmax=0.485)
+    ax.axhline(y=1000, color="black", linestyle="--", xmin=0.515)
+    ax.text(MAX_LEN / 2, 998, 'SLO', va='center', ha='center', color='black', fontsize=12)
 
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])  # type: ignore
 
     plt.text(-20, 500 - MARGIN/4, 'P95 latency (ms)')
-    plt.text(-20, (NODE_A_START + NODE_B_START - MARGIN) / 2, 'node-a-2core')
-    plt.text(-20, (NODE_B_START + NODE_C_START - MARGIN) / 2, 'node-b-4core')
-    plt.text(-20, (NODE_C_START + NODE_C_END -MARGIN/2) / 2, 'node-c-8core')
+    plt.text(-20, (NODE_C_START + NODE_B_START - MARGIN) / 2, 'Node C (8 cores)')
+    plt.text(-20, (NODE_B_START + NODE_A_START - MARGIN) / 2, 'Node B (4 cores)')
+    plt.text(-20, (NODE_A_START + NODE_A_END - MARGIN/2) / 2, 'Node A (2 cores)')
 
 
-    # Put a legend below current axis
-    ax.legend(
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.1),
-        fancybox=True,
-        shadow=True,
-        ncol=4,
-        handles=legend_elements,
-        prop={"size": 16},
-    )
-    # plt.legend(handles=legend_elements)
-    # axs[3].set_ylim([0,1000])
     plt.xticks(np.arange(0, MAX_LEN + 1, step=10), minor=False)
     plt.xlim(0, MAX_LEN)
-    yticks: List[float] = [0, 500, 1000]
-    ylabels = [0, 0.5, 1]
+
+    yticks: List[float] = [0, 250, 500, 750, 1000]
+    ylabels = [0, 0.25, 0.5, 0.75, 1]
+    ax.set_yticks(yticks, labels=ylabels, minor=False)
+
+    yticks = []
+    ylabels = []
     for i in range(2):
         yticks.append(NODE_A_START + (2 * i + 1) * HEIGHT / 2)
-        ylabels.append(i)
+        ylabels.append(2-i-1)
     for i in range(4):
         yticks.append(NODE_B_START + (2 * i + 1) * HEIGHT / 2)
-        ylabels.append(i)
+        ylabels.append(4-i-1)
     for i in range(8):
         yticks.append(NODE_C_START + (2 * i + 1) * HEIGHT / 2)
-        ylabels.append(i)
-    plt.yticks(yticks, labels=ylabels)
+        ylabels.append(8-i-1)
+
+    ax.set_yticks(yticks, labels=ylabels, minor=True)
 
     plt.title(f"P95 Latency of Memcached & Benchmark Schedule", fontdict={"fontsize": 20}, pad=15)
     plt.xlabel("Time since first PARSEC benchmark start (seconds)", fontdict={"fontsize": 15})
-    plt.ylim(0, NODE_C_END)
+    plt.ylim(0, NODE_A_END)
 
     plt.savefig(fname=f"results-part3/final_runs/{current_run}_plot.pdf")
 
