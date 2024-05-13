@@ -65,8 +65,15 @@ for i in range(4):
 
 plt.xlabel("Achieved QPS")
 plt.ylabel("P95 latency (ms)")
-plt.hlines(1, xmin=QPS_MIN, xmax=QPS_MAX, color="k", linestyles="--")
+
+plt.axhline(y=1, color="black", linestyle="--", xmax=0.485)
+plt.axhline(y=1, color="black", linestyle="--", xmin=0.515)
+plt.text(QPS_MAX / 2, 0.998, "SLO", va="center", ha="center", color="black", fontsize=12)
+
 plt.xlim(QPS_MIN, QPS_MAX)
+x_ticks = np.arange(QPS_MIN, QPS_MAX + 1, step=10_000)
+plt.xticks(x_ticks, minor=False, labels=[f"{int(x/1000)}k" for x in x_ticks])
+
 plt.legend()
 plt.grid(True)
 
