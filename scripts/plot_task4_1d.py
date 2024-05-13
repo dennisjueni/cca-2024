@@ -39,7 +39,6 @@ for i in range(2):
 
         qps[j] = qps[j] + [float(line[-4]) for line in lines]
         target = target + [float(line[-3]) for line in lines]
-        # cpu_usage = []
         for l in lines:
             start = datetime.utcfromtimestamp(int(l[-2]) / 1000)
             end = datetime.utcfromtimestamp(int(l[-1]) / 1000)
@@ -67,7 +66,7 @@ for i in range(2):
     cpu_usage = [sum(group) / len(group) for group in zip(*cpu_usage)]
 
     ax1.plot(qps, p95, color="#CC0A00", label="P95", marker="x")
-    ax1.set_ylabel("P95 Tail Latency (ms)", color="#CC0A00")
+    ax1.set_ylabel("P95 Latency (ms)", color="#CC0A00")
     ax1.tick_params(axis="y", labelcolor="#CC0A00")
     ax1.set_ylim([0, max(p95) + 0.5])
     ax1.hlines(1, QPS_MIN, QPS_MAX, color="k", linestyles="--")
@@ -84,6 +83,8 @@ for i in range(2):
         ax2.set_ylim([0, 110])
     else:
         ax2.set_ylim([0, 210])
+
+    plt.xticks(np.arange(0, 125_001, 25_000), labels=[f"{int(x/1000)}k" for x in np.arange(0, 125_001, 25_000)])
 
     plt.xlim(QPS_MIN, QPS_MAX)
     ax1.set_xlabel("Achieved QPS")
