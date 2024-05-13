@@ -1,81 +1,81 @@
-import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-MEASURE_DIR = "./results-part4/part1/final_run/"
-QPS_MIN = 0
-QPS_MAX = 130_000
-fig = plt.figure(figsize=(16, 9))
 
-labels = {0: "1 core, 1 thread", 1: "1 core, 2 threads", 2: "2 cores, 1 thread", 3: "2 cores, 2 threads"}
+def plot():
 
-suffix = {0: "1C_1T", 1: "1C_2T", 2: "2C_1T", 3: "2C_2T"}
+    MEASURE_DIR = "./results-part4/part1/final_run/"
+    QPS_MIN = 0
+    QPS_MAX = 130_000
+    fig = plt.figure(figsize=(16, 9))
 
-colors = ["#AACCCA", "#00CCA0", "#CC0A00", "#f06eee"]
+    labels = {0: "1 core, 1 thread", 1: "1 core, 2 threads", 2: "2 cores, 1 thread", 3: "2 cores, 2 threads"}
 
-for i in range(4):
-    qps = []
-    p95 = []
-    xs = []
-    ys = []
-    target = []
-    xerr = []
-    yerr = []
-    groups_y = {}
-    groups_x = {}
-    for j in range(3):
-        file_path = MEASURE_DIR + f"{suffix[i]}/run_{j}/mcperf.txt"
-        file = open(file_path, "r")
-        lines = file.read().splitlines()
-        lines = [line.split() for line in lines]
-        lines = [line for line in lines if len(line) == 20][1:]
+    suffix = {0: "1C_1T", 1: "1C_2T", 2: "2C_1T", 3: "2C_2T"}
 
-        qps = qps + [float(line[-4]) for line in lines]
-        target = target + [float(line[-3]) for line in lines]
-        p95 = p95 + [float(line[-8]) / 1000 for line in lines]
+    colors = ["#AACCCA", "#00CCA0", "#CC0A00", "#f06eee"]
 
-    for j in range(len(qps)):
-        key = target[j]
-        if key in groups_x.keys():
-            groups_y[key].append(p95[j])
-            groups_x[key].append(qps[j])
-        else:
-            groups_y[key] = [p95[j]]
-            groups_x[key] = [qps[j]]
-    for key in groups_x.keys():
-        assert len(groups_x[key]) == 3
-        xs.append(np.mean(groups_x[key]))
-        ys.append(np.mean(groups_y[key]))
-        xerr.append(np.std(groups_x[key]))
-        yerr.append(np.std(groups_y[key]))
-    marker_styles = ["o", "v", "^", "<", ">"]
-    xs, ys, xerr, yerr = zip(*list(sorted(list(zip(xs, ys, xerr, yerr)))))
-    plt.errorbar(
-        xs,
-        ys,
-        xerr=xerr,
-        yerr=yerr,
-        label=labels[i],
-        capsize=3,
-        color=colors[i],
-        marker=marker_styles[i],
-        markersize=10,
-    )
+    for i in range(4):
+        qps = []
+        p95 = []
+        xs = []
+        ys = []
+        target = []
+        xerr = []
+        yerr = []
+        groups_y = {}
+        groups_x = {}
+        for j in range(3):
+            file_path = MEASURE_DIR + f"{suffix[i]}/run_{j}/mcperf.txt"
+            file = open(file_path, "r")
+            lines = file.read().splitlines()
+            lines = [line.split() for line in lines]
+            lines = [line for line in lines if len(line) == 20][1:]
 
+            qps = qps + [float(line[-4]) for line in lines]
+            target = target + [float(line[-3]) for line in lines]
+            p95 = p95 + [float(line[-8]) / 1000 for line in lines]
 
-plt.xlabel("Achieved QPS")
-plt.ylabel("P95 latency (ms)")
+        for j in range(len(qps)):
+            key = target[j]
+            if key in groups_x.keys():
+                groups_y[key].append(p95[j])
+                groups_x[key].append(qps[j])
+            else:
+                groups_y[key] = [p95[j]]
+                groups_x[key] = [qps[j]]
+        for key in groups_x.keys():
+            assert len(groups_x[key]) == 3
+            xs.append(np.mean(groups_x[key]))
+            ys.append(np.mean(groups_y[key]))
+            xerr.append(np.std(groups_x[key]))
+            yerr.append(np.std(groups_y[key]))
+        marker_styles = ["o", "v", "^", "<", ">"]
+        xs, ys, xerr, yerr = zip(*list(sorted(list(zip(xs, ys, xerr, yerr)))))
+        plt.errorbar(
+            xs,
+            ys,
+            xerr=xerr,
+            yerr=yerr,
+            label=labels[i],
+            capsize=3,
+            color=colors[i],
+            marker=marker_styles[i],
+            markersize=10,
+        )
 
-plt.axhline(y=1, color="black", linestyle="--", xmax=0.485)
-plt.axhline(y=1, color="black", linestyle="--", xmin=0.515)
-plt.text(QPS_MAX / 2, 0.998, "SLO", va="center", ha="center", color="black", fontsize=12)
+    plt.xlabel("Achieved QPS")
+    plt.ylabel("P95 latency (ms)")
 
-plt.xlim(QPS_MIN, QPS_MAX)
-x_ticks = np.arange(QPS_MIN, QPS_MAX + 1, step=10_000)
-plt.xticks(x_ticks, minor=False, labels=[f"{int(x/1000)}k" for x in x_ticks])
+    plt.axhline(y=1, color="black", linestyle="--", xmax=0.485)
+    plt.axhline(y=1, color="black", linestyle="--", xmin=0.515)
+    plt.text(QPS_MAX / 2, 0.998, "SLO", va="center", ha="center", color="black", fontsize=12)
 
-plt.legend()
-plt.grid(True)
+    plt.xlim(QPS_MIN, QPS_MAX)
+    x_ticks = np.arange(QPS_MIN, QPS_MAX + 1, step=10_000)
+    plt.xticks(x_ticks, minor=False, labels=[f"{int(x/1000)}k" for x in x_ticks])
 
+    plt.legend()
+    plt.grid(True)
 
-plt.savefig(fname=f"{MEASURE_DIR}/plot_1a.pdf")
+    plt.savefig(fname=f"{MEASURE_DIR}/plot_1a.pdf")

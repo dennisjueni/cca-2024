@@ -30,11 +30,9 @@ labels = {
     "memcached": "Memcached",
 }
 
-def main():
+def plot():
 
     runs = ["run1", "run2", "run3"]
-
-    calculate_execution_time(runs)
 
     for run in runs:
         generate_plots(run)
@@ -259,7 +257,3 @@ def generate_plots(current_run: str):
     plt.ylim(0, NODE_A_END)
 
     plt.savefig(fname=f"results-part3/final_runs/{current_run}_plot.pdf")
-
-
-if __name__ == "__main__":
-    main()
