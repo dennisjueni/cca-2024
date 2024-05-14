@@ -1,18 +1,18 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: parsec-canneal
+  name: parsec-freqmine
   labels:
-    name: parsec-canneal
+    name: parsec-freqmine
 spec:
   template:
     spec:
       containers:
-      - image: anakli/cca:parsec_canneal
-        name: parsec-canneal
+      - image: anakli/cca:parsec_freqmine
+        name: parsec-freqmine
         imagePullPolicy: Always
         command: ["/bin/sh"]
-        args: ["-c", "taskset -c 4,5,6 ./run -a run -S parsec -p canneal -i native -n 3"]
+        args: ["-c", "taskset -c 0,1,2,3,4 ./run -a run -S parsec -p freqmine -i native -n 5"]
       restartPolicy: Never
       nodeSelector:
         cca-project-nodetype: "node-c-8core"

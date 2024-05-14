@@ -1,18 +1,18 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: parsec-freqmine
+  name: parsec-vips
   labels:
-    name: parsec-freqmine
+    name: parsec-vips
 spec:
   template:
     spec:
       containers:
-      - image: anakli/cca:parsec_freqmine
-        name: parsec-freqmine
+      - image: anakli/cca:parsec_vips
+        name: parsec-vips
         imagePullPolicy: Always
         command: ["/bin/sh"]
-        args: ["-c", "taskset -c 0,1,2,3 ./run -a run -S parsec -p freqmine -i native -n 4"]
+        args: ["-c", "taskset -c 5,6 ./run -a run -S parsec -p vips -i native -n 2"]
       restartPolicy: Never
       nodeSelector:
         cca-project-nodetype: "node-c-8core"

@@ -12,7 +12,7 @@ spec:
         name: parsec-blackscholes
         imagePullPolicy: Always
         command: ["/bin/sh"]
-        args: ["-c", "taskset -c 7 ./run -a run -S parsec -p blackscholes -i native -n 1"] # pin parsec.blackscholes benchmark to core 7 using 1 thread
+        args: ["-c", "taskset -c 1 ./run -a run -S parsec -p blackscholes -i native -n 1"]
       restartPolicy: Never
       nodeSelector:
-        cca-project-nodetype: "node-c-8core"
+        cca-project-nodetype: "node-a-2core"
