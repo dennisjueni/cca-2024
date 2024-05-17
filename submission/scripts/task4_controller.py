@@ -157,6 +157,7 @@ class Controller:
 
         time.sleep(60)
         self.logger.job_end(JobEnum.MEMCACHED)
+        self.logger.end()
 
 
 if __name__ == "__main__":
