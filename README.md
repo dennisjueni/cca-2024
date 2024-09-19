@@ -1,5 +1,7 @@
 # Cloud Computing Architecture Project
 
+In this project, we explored how to schedule latency-sensitive and batch applications in a cloud cluster using Kubernetes on GCloud.
+
 ## Before running the scripts
 
 1. You probably need to login to gcloud in your console, maybe with this command?
